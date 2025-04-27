@@ -18,13 +18,13 @@ class classes.StringUtil.ArgumentSplitter:
     end constructor.
     
     method public ArgumentSplitter parse(pArgument as char):
+        reset().
         assign argument = Sanitizer:wipeSpaces(pArgument).
         parseTable().
         return this-object.
     end method.
     
     method protected void parseTable():
-        empty temp-table arguments.
         def var i as int no-undo.
         def var arg as char no-undo.
         def var nextArg as char no-undo.
@@ -36,7 +36,7 @@ class classes.StringUtil.ArgumentSplitter:
                 nextArg = get(i + 1).
             
             if Matcher:startsWithOneOf(arg, argumentNameIndicator) then do:
-                if not Matcher:startsWithOneOf(arg, argumentNameIndicator) then do:                
+                if not Matcher:startsWithOneOf(nextArg, argumentNameIndicator) and nextArg <> '' then do:                
                     assign
                         arguments.argName = Sanitizer:shiftLeft(arg, argumentNameIndicator)
                         arguments.argValue = nextArg
@@ -55,6 +55,10 @@ class classes.StringUtil.ArgumentSplitter:
         end.
     end method.
     
+    method public char get():
+        return get('').
+    end method.
+    
     method public char get(pName as char):
         if findArg(pName) then do:
             return arguments.argValue.
@@ -63,8 +67,29 @@ class classes.StringUtil.ArgumentSplitter:
         return ''.
     end method.
     
-    method protected logical findArg(pName as char):
+    method public char next():
+        return this-object:next('').
+    end method.
+    
+    method public char next(pName as char):
+        if not avail arguments then do:
+            return get(pName).
+        end.
+        if findNextArg(pName) then do:
+            return arguments.argValue.
+        end.
+        return ''.
+    end method.
+    
+    method protected log findArg(pName as char):
         find first arguments
+            where arguments.argName = pName
+            no-error.
+        return avail arguments.    
+    end method.
+    
+    method public log findNextArg(pName as char):
+        find next arguments
             where arguments.argName = pName
             no-error.
         return avail arguments.    
@@ -88,4 +113,14 @@ class classes.StringUtil.ArgumentSplitter:
     method public int count():
         return num-entries(argument, this-object:delimiter).
     end method.
+    
+    
+    method public void reset():
+        empty temp-table arguments.
+        assign argument = ''.
+    end method.
+    
+    destructor ArgumentSplitter():
+        reset().
+    end destructor.
 end class.
