@@ -13,6 +13,7 @@ class classes.StringUtil.Alphabet:
     def public static property space as char init ' ' no-undo get. private set.
     def public static property tab as char init '~t' no-undo get. private set.
     def public static property newline as char init '~n' no-undo get. private set.
+    def public static property wild as char init '*?' no-undo get. private set.
     
     def public static property accentAlpha as char no-undo get. private set.
     def public static property accentAlphanum as char no-undo get. private set.

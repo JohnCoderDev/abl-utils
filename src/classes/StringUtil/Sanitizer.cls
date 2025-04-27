@@ -31,6 +31,25 @@ class classes.StringUtil.Sanitizer:
         return replaceChars(pSource, Alphabet:accentChars, Alphabet:accentCharsReplacement).
     end method.
     
+    method public static char escapeWild(pSource as char):  
+        return Sanitizer:escapeChars(pSource, Alphabet:wild).
+    end method.
+    
+    method public static char escapeChars(pSource as char, pEscape as char):
+        def var i as int no-undo.
+        def var c as char no-undo.
+        def var r as char no-undo.
+        assign r = pSource.
+        
+        do i = 1 to length(pEscape):
+            assign
+                c = Matcher:charAt(pEscape, i)
+                r = replace(r, c, '~~' + c).
+        end.
+        
+        return r.
+    end method.
+    
     method public static char wipeSpaces(pSource as char):
         def var wiped as char no-undo.
         def var currentChar as char no-undo.
