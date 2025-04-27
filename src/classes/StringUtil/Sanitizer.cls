@@ -11,7 +11,7 @@ class classes.StringUtil.Sanitizer:
         return filterChars(pSource, Alphabet:alpha).
     end method.
     
-    method public static char AlphaNum(pSource as char):
+    method public static char alphaNum(pSource as char):
         return filterChars(pSource, Alphabet:AlphaNum).
     end method.
     
