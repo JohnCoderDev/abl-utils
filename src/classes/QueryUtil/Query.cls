@@ -66,6 +66,11 @@ class classes.QueryUtil.Query:
         end.
     end method.
     
+    
+    method public Query reset():
+        empty temp-table buffers.
+    end method.
+    
     method protected void createBuffer(pName as character):
         if not findBuffer(pName) then do:
             create buffers.
