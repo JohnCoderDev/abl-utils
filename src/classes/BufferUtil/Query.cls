@@ -3,7 +3,7 @@ using Progress.Lang.* from propath.
 using classes.BufferUtil.* from propath.
 using classes.QueryUtil.* from propath.
 
-class classes.QueryUtil.Query:
+class classes.BufferUtil.Query:
     define public property handle as handle no-undo get. protected set.
     define public property mainBuffer as character no-undo get. protected set.
     
