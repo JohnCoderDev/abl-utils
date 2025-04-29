@@ -9,11 +9,11 @@ class classes.ClassUtil.C:
     end constructor.
     
     method public Object new():
-        return class:getClass(className):new().
+        return Progress.Lang.Class:getClass(className):new().
     end method.
     
     method public Progress.Lang.Class class():
-        return class:getClass(className).
+        return Progress.Lang.Class:getClass(className).
     end method.
     
     method public log exists():

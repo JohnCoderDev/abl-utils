@@ -1,10 +1,18 @@
 block-level on error undo, throw.
+using Progress.Lang.* from propath.
+using Progress.Json.ObjectModel.* from propath.
 using classes.BufferUtil.* from propath.
 using classes.Shared.Interfaces.* from propath.
-using Progress.Lang.* from propath.
 
 class classes.BufferUtil.Buffer:
-    define public property handle as handle no-undo get. set.
+    def public property handle as handle no-undo get. set.
+    def public property name as char no-undo
+        get:
+            if valid-handle(handle) then do:
+                return handle:name.
+            end.
+            return ''.
+        end.
     
     constructor Buffer():
     end constructor.
@@ -45,6 +53,48 @@ class classes.BufferUtil.Buffer:
             handle:buffer-release.
         end.
         delete object handle no-error.
+        return this-object.
+    end method.
+    
+    method public Buffer copy(pBuffer as handle):
+        handle:buffer-copy(pBuffer).
+        return this-object.
+    end method.
+    
+    method public Buffer copy(pBuffer as Buffer):
+        return this-object:copy(pBuffer:handle).
+    end method.
+    
+    method public Buffer first():
+        return first('').
+    end method.
+    
+    method public Buffer first(pPredicate as char):
+        return first(pPredicate, no-lock).
+    end method.
+    
+    method public Buffer first(pPredicate as char, pLock as int):
+        return first(pPredicate, pLock, no-wait).
+    end method.
+    
+    method public Buffer first(pPredicate as char, pLock as int, pWait as int):
+        if not valid-handle(handle) then return this-object.
+        handle:find-first(pPredicate, pLock, pWait).
+        return this-object.
+    end method.
+    
+    method public Buffer current():
+        return this-object:current(no-lock).
+    end method.
+    
+    method public Buffer current(pLock as int):
+        return this-object:current(pLock, no-wait).
+    end method.
+    
+    method public Buffer current(pLock as int, pWait as int):
+        if not valid-handle(handle) then return this-object.
+        handle:find-current(pLock, pWait).
+        return this-object.
     end method.
     
     method public logical updateField(pField as character, pValue as character):
@@ -394,6 +444,11 @@ class classes.BufferUtil.Buffer:
         return false.
     end method.
     
+    
+    method public handle field(pIndex as int):
+        return handle:buffer-field(pIndex).
+    end method.
+    
     method public handle field(pField as character):
         return this-object:handle:buffer-field(pField).
     end method.
@@ -407,6 +462,29 @@ class classes.BufferUtil.Buffer:
                 return false.
             end catch.    
         end.    
+    end method.
+    
+    method public log has(pIndex as int):
+        do on error undo:
+            this-object:field(pIndex).
+            return true.
+            
+            catch errorObject as Error:
+                return false.
+            end catch.
+        end.
+    end method.
+    
+    method public char type(pIndex as int):
+        if has(pIndex) then do:
+            return this-object:field(pIndex):data-type.
+        end.
+    end method.
+    
+    method public char fieldName(pIndex as int):
+        if has(pIndex) then do:
+            return this-object:field(pIndex):name.
+        end.
     end method.
     
     method public character type(pField as character):
@@ -424,6 +502,32 @@ class classes.BufferUtil.Buffer:
     
     method public character value(pField as character, pExtent as integer):
         if has(pField) then return this-object:field(pField):string-value(pExtent).
+    end method.
+    
+    method public Buffer fieldCopy(pBuffer as Buffer, pField as char):
+        if pBuffer:has(pField) and has(pField) then do:
+            handle:buffer-field(pField):buffer-value = pBuffer:handle:buffer-field(pField):buffer-value.
+        end.
+        return this-object.
+    end method.
+    
+    method public Buffer fieldCopy(pBuffer as handle, pField as char):
+        return fieldCopy(new Buffer(pBuffer), pField).
+    end method.
+    
+    method public int numFields():
+        return handle:num-fields.
+    end method.
+    
+    method public JsonObject toJson():
+        def var copyTable as Table no-undo.
+        def var resultJson as JsonObject no-undo.
+        assign 
+            copyTable = new Table(this-object)
+            resultJson = new JsonObject().
+        copyTable:bufferCopy(this-object).
+        copyTable:buffer:serialize-row('JSON', 'JsonObject', resultJson, false, ?, false, true).
+        return resultJson.
     end method.
     
     destructor Buffer():
