@@ -496,6 +496,22 @@ class classes.BufferUtil.Buffer:
         return handle:name.
     end method.
     
+    method public int extent(pField as char):
+        if has(pField) then return this-object:field(pField):extent.
+    end method.
+    
+    method public char initial(pField as char):
+        if has(pField) then return this-object:field(pField):initial.
+    end method.
+    
+    method public log fieldHasInitial(pField as char):
+        if has(pField) then return this-object:value(pField) = initial(pField).
+    end method.
+    
+    method public log fieldHasInitial(pField as char, pExtent as int):
+        if has(pField) then return this-object:value(pField, pExtent) = initial(pField).
+    end method.
+    
     method public character value(pField as character):
         if has(pField) then return this-object:field(pField):string-value.
     end method.
