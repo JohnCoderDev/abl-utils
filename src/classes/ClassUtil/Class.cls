@@ -1,19 +1,20 @@
 block-level on error undo, throw.
 using Progress.Lang.* from propath.
 
-class classes.ClassUtil.C:
-    def public property className as char no-undo get. set.
+class classes.ClassUtil.Class:
+    def public property name as char no-undo get. set.
     
-    constructor C(pClassName as char):
-        assign className = pClassName.
+    constructor Class(pClassName as char):
+        assign 
+            name = pClassName.
     end constructor.
     
     method public Object new():
-        return Progress.Lang.Class:getClass(className):new().
+        return Progress.Lang.Class:getClass(name):new().
     end method.
     
-    method public Progress.Lang.Class class():
-        return Progress.Lang.Class:getClass(className).
+    method public Progress.Lang.Class classObject():
+        return Progress.Lang.Class:getClass(name).
     end method.
     
     method public log exists():

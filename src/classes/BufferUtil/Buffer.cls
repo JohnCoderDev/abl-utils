@@ -2,6 +2,7 @@ block-level on error undo, throw.
 using Progress.Lang.* from propath.
 using Progress.Json.ObjectModel.* from propath.
 using classes.BufferUtil.* from propath.
+using classes.StringUtil.* from propath.
 using classes.Shared.Interfaces.* from propath.
 
 class classes.BufferUtil.Buffer:
@@ -48,14 +49,6 @@ class classes.BufferUtil.Buffer:
         return this-object.
     end method.
     
-    method public Buffer reset():
-        if handle:available then do:
-            handle:buffer-release.
-        end.
-        delete object handle no-error.
-        return this-object.
-    end method.
-    
     method public Buffer copy(pBuffer as handle):
         handle:buffer-copy(pBuffer).
         return this-object.
@@ -63,6 +56,18 @@ class classes.BufferUtil.Buffer:
     
     method public Buffer copy(pBuffer as Buffer):
         return this-object:copy(pBuffer:handle).
+    end method.
+    
+    method public Buffer copy(pBuffer as Buffer, pStrategy as char):
+        def var i as int no-undo.
+        do i = 1 to numFields():
+            FieldCopyStrategy:copy(pBuffer, this-object, fieldName(i), pStrategy).
+        end.
+        return this-object.
+    end method.
+    
+    method public Buffer copy(pBuffer as handle, pStrategy as char):
+        return copy(new Buffer(pBuffer), pStrategy).
     end method.
     
     method public Buffer first():
@@ -444,7 +449,6 @@ class classes.BufferUtil.Buffer:
         return false.
     end method.
     
-    
     method public handle field(pIndex as int):
         return handle:buffer-field(pIndex).
     end method.
@@ -535,11 +539,11 @@ class classes.BufferUtil.Buffer:
         return extent(pField) - fieldCountValueEqual(pField, pValue).
     end method.
     
-    method public int nextExtentWithInitial(pField as char):
-        return nextExtentWithValueEqual(pField, initial(pField)).
+    method public int nextPositionWithInitial(pField as char):
+        return nextPositionWithValueEqual(pField, initial(pField)).
     end method.
     
-    method public int nextExtentWithValueEqual(pField as char, pValue as char):
+    method public int nextPositionWithValueEqual(pField as char, pValue as char):
         if not has(pField) then return 0.
         if extent(pField) = 0 then return 0.
         
@@ -549,11 +553,11 @@ class classes.BufferUtil.Buffer:
         end.
     end method.
     
-    method public int nextExtentWithNotInitial(pField as char):
-        return nextExtentWithValueNotEqual(pField, initial(pField)).
+    method public int nextPositionWithNotInitial(pField as char):
+        return nextPositionWithValueNotEqual(pField, initial(pField)).
     end method.
     
-    method public int nextExtentWithValueNotEqual(pField as char, pValue as char):
+    method public int nextPositionWithValueNotEqual(pField as char, pValue as char):
         if not has(pField) then return 0.
         if extent(pField) = 0 then return 0.
         
@@ -580,14 +584,39 @@ class classes.BufferUtil.Buffer:
     end method.
     
     method public Buffer fieldCopy(pBuffer as Buffer, pField as char):
-        if pBuffer:has(pField) and has(pField) then do:
-            handle:buffer-field(pField):buffer-value = pBuffer:handle:buffer-field(pField):buffer-value.
+        def var i as int no-undo.
+        def var currentName as char no-undo.
+        assign pField = Sanitizer:wipeSpaces(pField).
+        
+        do i = 1 to num-entries(pField):
+            assign currentName = entry(i, pField, ' ').
+            if pBuffer:has(currentName) and has(currentName) then do:
+                updateField(currentName, pBuffer:field(pField):buffer-value). 
+            end.
         end.
+        
         return this-object.
     end method.
     
     method public Buffer fieldCopy(pBuffer as handle, pField as char):
         return fieldCopy(new Buffer(pBuffer), pField).
+    end method.
+    
+    method public Buffer fieldCopy(pBuffer as handle, pField as char, pStrategy as char):
+        return fieldCopy(new Buffer(pBuffer), pField, pStrategy).
+    end method.
+    
+    method public Buffer fieldCopy(pBuffer as Buffer, pField as char, pStrategy as char):
+        def var i as int no-undo.
+        def var currentName as char no-undo.
+        assign pField = Sanitizer:wipeSpaces(pField).
+        
+        do i = 1 to num-entries(pField, ' '):
+            assign currentName = entry(i, pField, ' ').
+            FieldCopyStrategy:copy(pBuffer, this-object, currentName, pStrategy).
+        end.
+        
+        return this-object.
     end method.
     
     method public int numFields():
@@ -604,8 +633,4 @@ class classes.BufferUtil.Buffer:
         copyTable:buffer:serialize-row('JSON', 'JsonObject', resultJson, false, ?, false, true).
         return resultJson.
     end method.
-    
-    destructor Buffer():
-        reset().
-    end destructor.
 end class.

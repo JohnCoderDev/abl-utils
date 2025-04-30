@@ -57,41 +57,34 @@ class classes.BufferUtil.Table:
     end method.
     
     method public Table addLike(pBuffer as Buffer, pName as char):
-        if pBuffer:has(pName) then do:
-            handle:add-like-field(pName, pBuffer:handle:buffer-field(pName)).
-        end.
-        return this-object.
-    end method.
-    
-    method public Table addLikes(pExpression as char, pNames as char):
         def var i as int no-undo.
-        assign pNames = Sanitizer:wipeSpaces(pNames).
-        do i = 1 to num-entries(pNames, ' '):
-            addLike(pExpression, entry(i, pNames, ' ')).
-        end.
-        return this-object.
-    end method.
-    
-    method public Table addLikes(pBuffer as handle, pNames as char):
-        def var i as int no-undo.
-        assign pNames = Sanitizer:wipeSpaces(pNames).
-        do i = 1 to num-entries(pNames, ' '):
-            addLike(pBuffer, entry(i, pNames, ' ')).
-        end.
-        return this-object.
-    end method.
-    
-    method public Table addLikes(pBuffer as buffer, pNames as char):
-        def var i as int no-undo.
-        assign pNames = Sanitizer:wipeSpaces(pNames).
-        do i = 1 to num-entries(pNames, ' '):
-            addLike(pBuffer, entry(i, pNames, ' ')).
+        def var currentName as char no-undo.
+        
+        assign pName = Sanitizer:wipeSpaces(pName).
+        
+        do i = 1 to num-entries(pName, ' '):
+            assign currentName = entry(i, pName, ' ').
+            if pBuffer:has(currentName) then do:
+                handle:add-like-field(currentName, pBuffer:handle:buffer-field(currentName)).
+            end.
         end.
         return this-object.
     end method.
     
     method public Table addField(pName as char, pType as char):
-        handle:add-new-field(pName, pType).
+        return addField(pName, pType, ?).
+    end method.
+    
+    method public Table addField(pName as char, pType as char, pExtent as int):
+        return addField(pName, pType, pExtent, ?).
+    end method.
+    
+    method public Table addField(pName as char, pType as char, pExtent as int, pInitial as char):
+        return addField(pName, pType, pExtent, pInitial, ?).
+    end method.
+    
+    method public Table addField(pName as char, pType as char, pExtent as int, pInitial as char, pLabel as char):
+        handle:add-new-field(pName, pType, pExtent, ?, pInitial, pLabel, pLabel).
         return this-object.
     end method.
     

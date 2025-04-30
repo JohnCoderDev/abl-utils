@@ -3,7 +3,7 @@ using Progress.Lang.* from propath.
 using classes.ClassUtil.* from propath.
 
 
-class classes.ClassUtil.P:
+class classes.ClassUtil.Parameter:
     def public property count as int init 0 no-undo get. private set.
     
     def temp-table params
@@ -11,7 +11,7 @@ class classes.ClassUtil.P:
         field type as char
         field obj as object.
         
-    method public P add(pValue as char):
+    method public Parameter add(pValue as char):
         create params.
         assign 
             count = count + 1
@@ -20,7 +20,7 @@ class classes.ClassUtil.P:
         return this-object.    
     end method.
     
-    method public P add(pValue as int):
+    method public Parameter add(pValue as int):
         create params.
         assign 
             count = count + 1
@@ -29,7 +29,7 @@ class classes.ClassUtil.P:
         return this-object.    
     end method.
     
-    method public P add(pValue as int64):
+    method public Parameter add(pValue as int64):
         create params.
         assign 
             count = count + 1
@@ -38,7 +38,7 @@ class classes.ClassUtil.P:
         return this-object.    
     end method.
     
-    method public P add(pValue as log):
+    method public Parameter add(pValue as log):
         create params.
         assign 
             count = count + 1
@@ -47,7 +47,7 @@ class classes.ClassUtil.P:
         return this-object.    
     end method.
     
-    method public P add(pValue as dec):
+    method public Parameter add(pValue as dec):
         create params.
         assign 
             count = count + 1
@@ -56,7 +56,7 @@ class classes.ClassUtil.P:
         return this-object.    
     end method.
     
-    method public P add(pValue as datetime-tz):
+    method public Parameter add(pValue as datetime-tz):
         create params.
         assign 
             count = count + 1
@@ -65,7 +65,7 @@ class classes.ClassUtil.P:
         return this-object.    
     end method.
     
-    method public P add(pValue as datetime):
+    method public Parameter add(pValue as datetime):
         create params.
         assign 
             count = count + 1
@@ -74,7 +74,7 @@ class classes.ClassUtil.P:
         return this-object.    
     end method.
     
-    method public P add(pValue as date):
+    method public Parameter add(pValue as date):
         create params.
         assign 
             count = count + 1
@@ -83,7 +83,7 @@ class classes.ClassUtil.P:
         return this-object.    
     end method.
     
-    method public P add(pValue as object):
+    method public Parameter add(pValue as object):
         create params.
         assign
             count = count + 1
