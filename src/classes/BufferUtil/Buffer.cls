@@ -512,6 +512,65 @@ class classes.BufferUtil.Buffer:
         if has(pField) then return this-object:value(pField, pExtent) = initial(pField).
     end method.
     
+    method public int fieldCountInitial(pField as char):
+        return fieldCountValueEqual(pField, initial(pField)).
+    end method.
+    
+    method public int fieldCountValueEqual(pField as char, pValue as char):
+        if not has(pField) then return 0.
+        if extent(pField) = 0 and not this-object:value(pField) = pValue then return 0.
+        if extent(pField) = 0 and this-object:value(pField) = pValue then return 1.
+        
+        def var c as int no-undo.
+        def var i as int no-undo.
+        do i = 1 to extent(pField):
+            if this-object:value(pField, i) = pValue then do:
+                assign c = c + 1.
+            end.
+        end.
+        return c.
+    end method.
+    
+    method public int fieldCountValueNotEqual(pField as char, pValue as char):
+        return extent(pField) - fieldCountValueEqual(pField, pValue).
+    end method.
+    
+    method public int nextExtentWithInitial(pField as char):
+        return nextExtentWithValueEqual(pField, initial(pField)).
+    end method.
+    
+    method public int nextExtentWithValueEqual(pField as char, pValue as char):
+        if not has(pField) then return 0.
+        if extent(pField) = 0 then return 0.
+        
+        def var i as int no-undo.
+        do i = 1 to extent(pField):
+            if this-object:value(pField, i) = pValue then return i.
+        end.
+    end method.
+    
+    method public int nextExtentWithNotInitial(pField as char):
+        return nextExtentWithValueNotEqual(pField, initial(pField)).
+    end method.
+    
+    method public int nextExtentWithValueNotEqual(pField as char, pValue as char):
+        if not has(pField) then return 0.
+        if extent(pField) = 0 then return 0.
+        
+        def var i as int no-undo.
+        do i = 1 to extent(pField):
+            if this-object:value(pField, i) <> pValue then return i.
+        end.
+    end method.
+    
+    method public char value(pIndex as int):
+        if has(pIndex) then return this-object:field(pIndex):string-value.
+    end method.
+    
+    method public char value(pIndex as int, pExtent as int):
+        if has(pIndex) then return this-object:field(pIndex):string-value(pExtent).
+    end method.
+    
     method public character value(pField as character):
         if has(pField) then return this-object:field(pField):string-value.
     end method.
