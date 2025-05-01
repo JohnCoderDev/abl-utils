@@ -135,6 +135,36 @@ class classes.BufferUtil.Buffer:
         return this-object.
     end method.
     
+    method public log setNull(pField as char):
+        return setNull(pField, 0).
+    end method.
+    
+    method public log setNull(pField as char, pExtent as int):
+        if not has(pField) then return false.
+        
+        do on error undo, throw:
+            if pExtent > 0 then do:
+                assign this-object:field(pField):buffer-value(pExtent) = ?.
+            end.
+            else do:
+                assign this-object:field(pField):buffer-value = ?.
+            end.
+            
+            catch errorObject as Error:
+                return false.
+            end catch.
+        end.
+    end method.
+    
+    method public log setInitial(pField as char):
+        return setInitial(pField, 0).
+    end method.
+    
+    method public log setInitial(pField as char, pExtent as int):
+        if not has(pField) then return false.
+        return updateField(pField, initial(pField), pExtent).
+    end method.
+    
     method public log updateField(pField as char, pValue as char):
         return updateField(pField, pValue, 0).
     end method.
@@ -177,27 +207,35 @@ class classes.BufferUtil.Buffer:
             assign fieldHandle = this-object:field(pField).
             if pExtent > 0 then do:    
                 case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value(pExtent) = cast(pValue, StringInterface):toString().
+                    when 'character' then fieldHandle:buffer-value(pExtent) = cast(pValue, StringInterface):toString().
                     when 'integer' then fieldHandle:buffer-value(pExtent) = cast(pValue, IntInterface):toInt().
                     when 'int64' then fieldHandle:buffer-value(pExtent) = cast(pValue, Int64Interface):toInt64().
                     when 'decimal' then fieldHandle:buffer-value(pExtent) = cast(pValue, DecInterface):toDec().
                     when 'date' then fieldHandle:buffer-value(pExtent) = cast(pValue, DateInterface):toDate().
                     when 'datetime' then fieldHandle:buffer-value(pExtent) = cast(pValue, DateTimeInterface):toDateTime().
                     when 'datetime-tz' then fieldHandle:buffer-value(pExtent) = cast(pValue, DateTimeTZInterface):toDateTimeTZ().
-                    when 'log' then fieldHandle:buffer-value(pExtent) = cast(pValue, LogInterface):toLog().
+                    when 'logical' then fieldHandle:buffer-value(pExtent) = cast(pValue, LogInterface):toLog().
                 end case.
             end.
             else do:
-                case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value = cast(pValue, StringInterface):toString().
-                    when 'integer' then fieldHandle:buffer-value = cast(pValue, IntInterface):toInt().
-                    when 'int64' then fieldHandle:buffer-value = cast(pValue, Int64Interface):toInt64().
-                    when 'decimal' then fieldHandle:buffer-value = cast(pValue, DecInterface):toDec().
-                    when 'date' then fieldHandle:buffer-value = cast(pValue, DateInterface):toDate().
-                    when 'datetime' then fieldHandle:buffer-value = cast(pValue, DateTimeInterface):toDateTime().
-                    when 'datetime-tz' then fieldHandle:buffer-value = cast(pValue, DateTimeTZInterface):toDateTimeTZ().
-                    when 'log' then fieldHandle:buffer-value = cast(pValue, LogInterface):toLog().
-                end case.
+                if extent(pField) > 0 then do:
+                    define variable i as int no-undo.
+                    do i = 1 to extent(pField):
+                        updateField(pField, pValue, i).
+                    end.
+                end.
+                else do:
+                    case fieldHandle:data-type:
+                        when 'character' then fieldHandle:buffer-value = cast(pValue, StringInterface):toString().
+                        when 'integer' then fieldHandle:buffer-value = cast(pValue, IntInterface):toInt().
+                        when 'int64' then fieldHandle:buffer-value = cast(pValue, Int64Interface):toInt64().
+                        when 'decimal' then fieldHandle:buffer-value = cast(pValue, DecInterface):toDec().
+                        when 'date' then fieldHandle:buffer-value = cast(pValue, DateInterface):toDate().
+                        when 'datetime' then fieldHandle:buffer-value = cast(pValue, DateTimeInterface):toDateTime().
+                        when 'datetime-tz' then fieldHandle:buffer-value = cast(pValue, DateTimeTZInterface):toDateTimeTZ().
+                        when 'logical' then fieldHandle:buffer-value = cast(pValue, LogInterface):toLog().
+                    end case.
+                end.    
             end.
             return true.
             
@@ -214,27 +252,35 @@ class classes.BufferUtil.Buffer:
             assign fieldHandle = this-object:field(pField).
             if pExtent > 0 then do:    
                 case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value(pExtent) = string(pValue).
+                    when 'character' then fieldHandle:buffer-value(pExtent) = string(pValue).
                     when 'integer' then fieldHandle:buffer-value(pExtent) = integer(pValue).
                     when 'int64' then fieldHandle:buffer-value(pExtent) = int64(pValue).
                     when 'decimal' then fieldHandle:buffer-value(pExtent) = dec(pValue).
                     when 'date' then fieldHandle:buffer-value(pExtent) = date(pValue).
                     when 'datetime' then fieldHandle:buffer-value(pExtent) = datetime(pValue).
                     when 'datetime-tz' then fieldHandle:buffer-value(pExtent) = datetime-tz(pValue).
-                    when 'log' then fieldHandle:buffer-value(pExtent) = logical(pValue).
+                    when 'logical' then fieldHandle:buffer-value(pExtent) = logical(pValue).
                 end case.
             end.
             else do:
-                case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value = string(pValue).
-                    when 'integer' then fieldHandle:buffer-value = integer(pValue).
-                    when 'int64' then fieldHandle:buffer-value = int64(pValue).
-                    when 'decimal' then fieldHandle:buffer-value = dec(pValue).
-                    when 'date' then fieldHandle:buffer-value = date(pValue).
-                    when 'datetime' then fieldHandle:buffer-value = datetime(pValue).
-                    when 'datetime-tz' then fieldHandle:buffer-value = datetime-tz(pValue).
-                    when 'log' then fieldHandle:buffer-value = logical(pValue).
-                end case.
+                if extent(pField) > 0 then do:
+                    define variable i as int no-undo.
+                    do i = 1 to extent(pField):
+                        updateField(pField, pValue, i).
+                    end.
+                end.
+                else do:
+                    case fieldHandle:data-type:
+                        when 'character' then fieldHandle:buffer-value = string(pValue).
+                        when 'integer' then fieldHandle:buffer-value = integer(pValue).
+                        when 'int64' then fieldHandle:buffer-value = int64(pValue).
+                        when 'decimal' then fieldHandle:buffer-value = dec(pValue).
+                        when 'date' then fieldHandle:buffer-value = date(pValue).
+                        when 'datetime' then fieldHandle:buffer-value = datetime(pValue).
+                        when 'datetime-tz' then fieldHandle:buffer-value = datetime-tz(pValue).
+                        when 'logical' then fieldHandle:buffer-value = logical(pValue).
+                    end case.
+                end.    
             end.
             return true.
             
@@ -251,21 +297,29 @@ class classes.BufferUtil.Buffer:
             assign fieldHandle = this-object:field(pField).
             if pExtent > 0 then do:    
                 case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value(pExtent) = string(pValue).
+                    when 'character' then fieldHandle:buffer-value(pExtent) = string(pValue).
                     when 'integer' then fieldHandle:buffer-value(pExtent) = integer(pValue).
                     when 'int64' then fieldHandle:buffer-value(pExtent) = int64(pValue).
                     when 'decimal' then fieldHandle:buffer-value(pExtent) = dec(pValue).
-                    when 'log' then fieldHandle:buffer-value(pExtent) = logical(pValue).
+                    when 'logical' then fieldHandle:buffer-value(pExtent) = logical(pValue).
                 end case.
             end.
             else do:
-                case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value = string(pValue).
-                    when 'integer' then fieldHandle:buffer-value = integer(pValue).
-                    when 'int64' then fieldHandle:buffer-value = int64(pValue).
-                    when 'decimal' then fieldHandle:buffer-value = dec(pValue).
-                    when 'log' then fieldHandle:buffer-value = logical(pValue).
-                end case.
+                if extent(pField) > 0 then do:
+                    define variable i as int no-undo.
+                    do i = 1 to extent(pField):
+                        updateField(pField, pValue, i).
+                    end.
+                end.
+                else do:
+                    case fieldHandle:data-type:
+                        when 'character' then fieldHandle:buffer-value = string(pValue).
+                        when 'integer' then fieldHandle:buffer-value = integer(pValue).
+                        when 'int64' then fieldHandle:buffer-value = int64(pValue).
+                        when 'decimal' then fieldHandle:buffer-value = dec(pValue).
+                        when 'logical' then fieldHandle:buffer-value = logical(pValue).
+                    end case.
+                end.    
             end.
             return true.
             
@@ -282,27 +336,35 @@ class classes.BufferUtil.Buffer:
             assign fieldHandle = this-object:field(pField).
             if pExtent > 0 then do:    
                 case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value(pExtent) = string(pValue).
+                    when 'character' then fieldHandle:buffer-value(pExtent) = string(pValue).
                     when 'integer' then fieldHandle:buffer-value(pExtent) = integer(pValue).
                     when 'int64' then fieldHandle:buffer-value(pExtent) = int64(pValue).
                     when 'decimal' then fieldHandle:buffer-value(pExtent) = dec(pValue).
                     when 'date' then fieldHandle:buffer-value(pExtent) = date(pValue).
                     when 'datetime' then fieldHandle:buffer-value(pExtent) = datetime(pValue).
                     when 'datetime-tz' then fieldHandle:buffer-value(pExtent) = datetime-tz(pValue).
-                    when 'log' then fieldHandle:buffer-value(pExtent) = logical(pValue).
+                    when 'logical' then fieldHandle:buffer-value(pExtent) = logical(pValue).
                 end case.
             end.
             else do:
-                case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value = string(pValue).
-                    when 'integer' then fieldHandle:buffer-value = integer(pValue).
-                    when 'int64' then fieldHandle:buffer-value = int64(pValue).
-                    when 'decimal' then fieldHandle:buffer-value = dec(pValue).
-                    when 'date' then fieldHandle:buffer-value = date(pValue).
-                    when 'datetime' then fieldHandle:buffer-value = datetime(pValue).
-                    when 'datetime-tz' then fieldHandle:buffer-value = datetime-tz(pValue).
-                    when 'log' then fieldHandle:buffer-value = logical(pValue).
-                end case.
+                if extent(pField) > 0 then do:
+                    define variable i as int no-undo.
+                    do i = 1 to extent(pField):
+                        updateField(pField, pValue, i).
+                    end.
+                end.
+                else do:
+                    case fieldHandle:data-type:
+                        when 'character' then fieldHandle:buffer-value = string(pValue).
+                        when 'integer' then fieldHandle:buffer-value = integer(pValue).
+                        when 'int64' then fieldHandle:buffer-value = int64(pValue).
+                        when 'decimal' then fieldHandle:buffer-value = dec(pValue).
+                        when 'date' then fieldHandle:buffer-value = date(pValue).
+                        when 'datetime' then fieldHandle:buffer-value = datetime(pValue).
+                        when 'datetime-tz' then fieldHandle:buffer-value = datetime-tz(pValue).
+                        when 'logical' then fieldHandle:buffer-value = logical(pValue).
+                    end case.
+                end.    
             end.
             return true.
             
@@ -319,25 +381,33 @@ class classes.BufferUtil.Buffer:
             assign fieldHandle = this-object:field(pField).
             if pExtent > 0 then do:    
                 case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value(pExtent) = string(pValue).
+                    when 'character' then fieldHandle:buffer-value(pExtent) = string(pValue).
                     when 'integer' then fieldHandle:buffer-value(pExtent) = integer(pValue).
                     when 'int64' then fieldHandle:buffer-value(pExtent) = int64(pValue).
                     when 'decimal' then fieldHandle:buffer-value(pExtent) = dec(pValue).
                     when 'date' then fieldHandle:buffer-value(pExtent) = date(pValue).
                     when 'datetime-tz' then fieldHandle:buffer-value(pExtent) = datetime-tz(pValue).
-                    when 'log' then fieldHandle:buffer-value(pExtent) = logical(pValue).
+                    when 'logical' then fieldHandle:buffer-value(pExtent) = logical(pValue).
                 end case.
             end.
             else do:
-                case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value = string(pValue).
-                    when 'integer' then fieldHandle:buffer-value = integer(pValue).
-                    when 'int64' then fieldHandle:buffer-value = int64(pValue).
-                    when 'decimal' then fieldHandle:buffer-value = dec(pValue).
-                    when 'date' then fieldHandle:buffer-value = date(pValue).
-                    when 'datetime-tz' then fieldHandle:buffer-value = datetime-tz(pValue).
-                    when 'log' then fieldHandle:buffer-value = logical(pValue).
-                end case.
+                if extent(pField) > 0 then do:
+                    define variable i as int no-undo.
+                    do i = 1 to extent(pField):
+                        updateField(pField, pValue, i).
+                    end.
+                end.
+                else do:
+                    case fieldHandle:data-type:
+                        when 'character' then fieldHandle:buffer-value = string(pValue).
+                        when 'integer' then fieldHandle:buffer-value = integer(pValue).
+                        when 'int64' then fieldHandle:buffer-value = int64(pValue).
+                        when 'decimal' then fieldHandle:buffer-value = dec(pValue).
+                        when 'date' then fieldHandle:buffer-value = date(pValue).
+                        when 'datetime-tz' then fieldHandle:buffer-value = datetime-tz(pValue).
+                        when 'logical' then fieldHandle:buffer-value = logical(pValue).
+                    end case.
+                end.    
             end.
             return true.
             
@@ -354,27 +424,35 @@ class classes.BufferUtil.Buffer:
             assign fieldHandle = this-object:field(pField).
             if pExtent > 0 then do:    
                 case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value(pExtent) = string(pValue).
+                    when 'character' then fieldHandle:buffer-value(pExtent) = string(pValue).
                     when 'integer' then fieldHandle:buffer-value(pExtent) = integer(pValue).
                     when 'int64' then fieldHandle:buffer-value(pExtent) = int64(pValue).
                     when 'decimal' then fieldHandle:buffer-value(pExtent) = dec(pValue).
                     when 'date' then fieldHandle:buffer-value(pExtent) = date(pValue).
                     when 'datetime' then fieldHandle:buffer-value(pExtent) = datetime(pValue).
                     when 'datetime-tz' then fieldHandle:buffer-value(pExtent) = datetime-tz(pValue).
-                    when 'log' then fieldHandle:buffer-value(pExtent) = logical(pValue).
+                    when 'logical' then fieldHandle:buffer-value(pExtent) = logical(pValue).
                 end case.
             end.
             else do:
-                case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value = string(pValue).
-                    when 'integer' then fieldHandle:buffer-value = integer(pValue).
-                    when 'int64' then fieldHandle:buffer-value = int64(pValue).
-                    when 'decimal' then fieldHandle:buffer-value = dec(pValue).
-                    when 'date' then fieldHandle:buffer-value = date(pValue).
-                    when 'datetime' then fieldHandle:buffer-value = datetime(pValue).
-                    when 'datetime-tz' then fieldHandle:buffer-value = datetime-tz(pValue).
-                    when 'log' then fieldHandle:buffer-value = logical(pValue).
-                end case.
+                if extent(pField) > 0 then do:
+                    define variable i as int no-undo.
+                    do i = 1 to extent(pField):
+                        updateField(pField, pValue, i).
+                    end.
+                end.
+                else do:
+                    case fieldHandle:data-type:
+                        when 'character' then fieldHandle:buffer-value = string(pValue).
+                        when 'integer' then fieldHandle:buffer-value = integer(pValue).
+                        when 'int64' then fieldHandle:buffer-value = int64(pValue).
+                        when 'decimal' then fieldHandle:buffer-value = dec(pValue).
+                        when 'date' then fieldHandle:buffer-value = date(pValue).
+                        when 'datetime' then fieldHandle:buffer-value = datetime(pValue).
+                        when 'datetime-tz' then fieldHandle:buffer-value = datetime-tz(pValue).
+                        when 'logical' then fieldHandle:buffer-value = logical(pValue).
+                    end case.
+                end.    
             end.
             return true.
             
@@ -391,21 +469,29 @@ class classes.BufferUtil.Buffer:
             assign fieldHandle = this-object:field(pField).
             if pExtent > 0 then do:    
                 case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value(pExtent) = string(pValue).
+                    when 'character' then fieldHandle:buffer-value(pExtent) = string(pValue).
                     when 'integer' then fieldHandle:buffer-value(pExtent) = integer(pValue).
                     when 'int64' then fieldHandle:buffer-value(pExtent) = int64(pValue).
                     when 'decimal' then fieldHandle:buffer-value(pExtent) = dec(pValue).
-                    when 'log' then fieldHandle:buffer-value(pExtent) = logical(pValue).
+                    when 'logical' then fieldHandle:buffer-value(pExtent) = logical(pValue).
                 end case.
             end.
             else do:
-                case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value = string(pValue).
-                    when 'integer' then fieldHandle:buffer-value = integer(pValue).
-                    when 'int64' then fieldHandle:buffer-value = int64(pValue).
-                    when 'decimal' then fieldHandle:buffer-value = dec(pValue).
-                    when 'log' then fieldHandle:buffer-value = logical(pValue).
-                end case.
+                if extent(pField) > 0 then do:
+                    define variable i as int no-undo.
+                    do i = 1 to extent(pField):
+                        updateField(pField, pValue, i).
+                    end.
+                end.
+                else do:
+                    case fieldHandle:data-type:
+                        when 'character' then fieldHandle:buffer-value = string(pValue).
+                        when 'integer' then fieldHandle:buffer-value = integer(pValue).
+                        when 'int64' then fieldHandle:buffer-value = int64(pValue).
+                        when 'decimal' then fieldHandle:buffer-value = dec(pValue).
+                        when 'logical' then fieldHandle:buffer-value = logical(pValue).
+                    end case.
+                end.    
             end.
             return true.
             
@@ -422,23 +508,31 @@ class classes.BufferUtil.Buffer:
             assign fieldHandle = this-object:field(pField).
             if pExtent > 0 then do:    
                 case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value(pExtent) = string(pValue).
+                    when 'character' then fieldHandle:buffer-value(pExtent) = string(pValue).
                     when 'integer' then fieldHandle:buffer-value(pExtent) = integer(pValue).
                     when 'int64' then fieldHandle:buffer-value(pExtent) = int64(pValue).
                     when 'decimal' then fieldHandle:buffer-value(pExtent) = dec(pValue).
                     when 'date' then fieldHandle:buffer-value(pExtent) = date(pValue).
-                    when 'log' then fieldHandle:buffer-value(pExtent) = logical(pValue).
+                    when 'logical' then fieldHandle:buffer-value(pExtent) = logical(pValue).
                 end case.
             end.
             else do:
-                case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value = string(pValue).
-                    when 'integer' then fieldHandle:buffer-value = integer(pValue).
-                    when 'int64' then fieldHandle:buffer-value = int64(pValue).
-                    when 'decimal' then fieldHandle:buffer-value = dec(pValue).
-                    when 'date' then fieldHandle:buffer-value = date(pValue).
-                    when 'log' then fieldHandle:buffer-value = logical(pValue).
-                end case.
+                if extent(pField) > 0 then do:
+                    define variable i as int no-undo.
+                    do i = 1 to extent(pField):
+                        updateField(pField, pValue, i).
+                    end.
+                end.
+                else do:
+                    case fieldHandle:data-type:
+                        when 'character' then fieldHandle:buffer-value = string(pValue).
+                        when 'integer' then fieldHandle:buffer-value = integer(pValue).
+                        when 'int64' then fieldHandle:buffer-value = int64(pValue).
+                        when 'decimal' then fieldHandle:buffer-value = dec(pValue).
+                        when 'date' then fieldHandle:buffer-value = date(pValue).
+                        when 'logical' then fieldHandle:buffer-value = logical(pValue).
+                    end case.
+                end.    
             end.
             return true.
             
@@ -455,23 +549,31 @@ class classes.BufferUtil.Buffer:
             assign fieldHandle = this-object:field(pField).
             if pExtent > 0 then do:    
                 case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value(pExtent) = string(pValue).
+                    when 'character' then fieldHandle:buffer-value(pExtent) = string(pValue).
                     when 'integer' then fieldHandle:buffer-value(pExtent) = integer(pValue).
                     when 'int64' then fieldHandle:buffer-value(pExtent) = int64(pValue).
                     when 'decimal' then fieldHandle:buffer-value(pExtent) = dec(pValue).
                     when 'date' then fieldHandle:buffer-value(pExtent) = date(pValue).
-                    when 'log' then fieldHandle:buffer-value(pExtent) = logical(pValue).
+                    when 'logical' then fieldHandle:buffer-value(pExtent) = logical(pValue).
                 end case.
             end.
             else do:
-                case fieldHandle:data-type:
-                    when 'char' then fieldHandle:buffer-value = string(pValue).
-                    when 'integer' then fieldHandle:buffer-value = integer(pValue).
-                    when 'int64' then fieldHandle:buffer-value = int64(pValue).
-                    when 'decimal' then fieldHandle:buffer-value = dec(pValue).
-                    when 'date' then fieldHandle:buffer-value = date(pValue).
-                    when 'log' then fieldHandle:buffer-value = logical(pValue).
-                end case.
+                if extent(pField) > 0 then do:
+                    define variable i as int no-undo.
+                    do i = 1 to extent(pField):
+                        updateField(pField, pValue, i).
+                    end.
+                end.
+                else do:
+                    case fieldHandle:data-type:
+                        when 'character' then fieldHandle:buffer-value = string(pValue).
+                        when 'integer' then fieldHandle:buffer-value = integer(pValue).
+                        when 'int64' then fieldHandle:buffer-value = int64(pValue).
+                        when 'decimal' then fieldHandle:buffer-value = dec(pValue).
+                        when 'date' then fieldHandle:buffer-value = date(pValue).
+                        when 'logical' then fieldHandle:buffer-value = logical(pValue).
+                    end case.
+                end.    
             end.
             return true.
             
@@ -538,7 +640,10 @@ class classes.BufferUtil.Buffer:
     end method.
     
     method public char initial(pField as char):
-        if has(pField) then return this-object:field(pField):initial.
+        if has(pField) then do:
+            if this-object:field(pField):default-string = ? then return ''.
+            return this-object:field(pField):default-string.
+        end.
     end method.
     
     method public log fieldHasInitial(pField as char):
@@ -587,16 +692,24 @@ class classes.BufferUtil.Buffer:
     end method.
     
     method public int nextPositionWithNotInitial(pField as char):
-        return nextPositionWithValueNotEqual(pField, initial(pField)).
+        return nextPositionWithNotInitial(pField, 0).
+    end method.
+    
+    method public int nextPositionWithNotInitial(pField as char, pLowerIgnored as int):
+        return nextPositionWithValueNotEqual(pField, initial(pField), pLowerIgnored).
     end method.
     
     method public int nextPositionWithValueNotEqual(pField as char, pValue as char):
+        return nextPositionWithValueNotEqual(pField, pValue, 0).
+    end method.
+    
+    method public int nextPositionWithValueNotEqual(pField as char, pValue as char, pLowerIgnored as int):
         if not has(pField) then return 0.
         if extent(pField) = 0 then return 0.
         
         def var i as int no-undo.
         do i = 1 to extent(pField):
-            if this-object:value(pField, i) <> pValue then return i.
+            if this-object:value(pField, i) <> pValue and i > pLowerIgnored then return i.
         end.
     end method.
     
@@ -610,38 +723,44 @@ class classes.BufferUtil.Buffer:
     
     method public char value(pField as char):
         if has(pField) then do:
-            if extent(pField) = 0 then return handle:string-value.
+            if extent(pField) = 0 then do:
+                if this-object:field(pField):buffer-value = ? then return ''.
+                return string(this-object:field(pField):buffer-value).
+            end.
             return Joiner:join(this-object, pField).
         end.
     end method.
     
     method public char value(pField as char, pExtent as integer):
         if has(pField) then do:
-            return this-object:field(pField):string-value(pExtent).
+            if this-object:field(pField):buffer-value(pExtent) = ? then return ''.
+            return string(this-object:field(pField):buffer-value(pExtent)).
         end.    
     end method.
     
-    method public Buffer fieldCopy(pBuffer as Buffer, pField as char):
+    method public Buffer fieldCopy(pBuffer as Buffer, pFields as char):
+        return fieldCopy(pBuffer, pFields, FieldCopyStrategy:DEFAULT). 
+    end method.
+    
+    method public Buffer fieldCopy(pBuffer as handle, pFields as char):
+        return fieldCopy(new Buffer(pBuffer), pFields).
+    end method.
+    
+    method public Buffer fieldCopy(pBuffer as handle, pFields as char, pStrategy as char):
+        return fieldCopy(new Buffer(pBuffer), pFields, pStrategy).
+    end method.
+    
+     method public Buffer fieldCopy(pBuffer as Buffer, pFields as char, pStrategy as char):
         def var i as int no-undo.
         def var currentName as char no-undo.
-        assign pField = Sanitizer:wipeSpaces(pField).
+        assign pFields = Sanitizer:wipeSpaces(pFields).
         
-        do i = 1 to num-entries(pField):
-            assign currentName = entry(i, pField, ' ').
-            if pBuffer:has(currentName) and has(currentName) then do:
-                updateField(currentName, pBuffer:field(pField):buffer-value). 
-            end.
+        do i = 1 to num-entries(pFields, ' '):
+            assign currentName = entry(i, pFields, ' ').
+            FieldCopyStrategy:copy(pBuffer, this-object, currentName, pStrategy).
         end.
         
         return this-object.
-    end method.
-    
-    method public Buffer fieldCopy(pBuffer as handle, pField as char):
-        return fieldCopy(new Buffer(pBuffer), pField).
-    end method.
-    
-    method public Buffer fieldCopy(pBuffer as handle, pField as char, pStrategy as char):
-        return fieldCopy(new Buffer(pBuffer), pField, pStrategy).
     end method.
     
     method public Table getBufferDifferences(pBuffer as Buffer, pFieldName as char, pLeftName as char, pRightName as char):
@@ -655,31 +774,14 @@ class classes.BufferUtil.Buffer:
     end method.
     
     method public log fieldEqual(pBuffer as Buffer, pField as char):
-        if not pBuffer:has(pField) or not has(pField) then return false.
-        if pBuffer:extent(pField) <> extent(pField) then return false.
-        
-        if pBuffer:extent(pField) = 0 then do:
-            return pBuffer:field(pField):buffer-value = this-object:field(pField):buffer-value.
-        end.
-        
-        def var i as int no-undo.
-        do i = 1 to extent(pField):
-            if pBuffer:field(pField):buffer-value <> this-object:field(pField):buffer-value then return false.
-        end.
-        return true.
+        return fieldEqual(pBuffer, pField, true).
     end method.
     
-    method public Buffer fieldCopy(pBuffer as Buffer, pField as char, pStrategy as char):
-        def var i as int no-undo.
-        def var currentName as char no-undo.
-        assign pField = Sanitizer:wipeSpaces(pField).
-        
-        do i = 1 to num-entries(pField, ' '):
-            assign currentName = entry(i, pField, ' ').
-            FieldCopyStrategy:copy(pBuffer, this-object, currentName, pStrategy).
-        end.
-        
-        return this-object.
+    method public log fieldEqual(pBuffer as Buffer, pField as char, pIgnoreTypes as log):
+        if not pBuffer:has(pField) or not has(pField) then return false.
+        if pBuffer:extent(pField) <> extent(pField) then return false.
+        if not pIgnoreTypes and pBuffer:type(pField) <> type(pField) then return false.
+        return this-object:value(pField) = pBuffer:value(pField).
     end method.
     
     method public int numFields():

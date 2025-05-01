@@ -8,13 +8,13 @@ class classes.BufferUtil.FieldCopyStrategy:
     def public static property DEFAULT as char init 'force' no-undo get.
     
     def public static property STRATEGY_FORCE as char init 'force' no-undo get.
-    def public static property STRATEGY_REPLACE as char init 'replace' no-undo get.
-    def public static property STRATEGY_EMPTY as char init 'empty' no-undo get.
+    def public static property STRATEGY_MERGE as char init 'merge' no-undo get.
+    def public static property STRATEGY_AVAILABLE as char init 'available' no-undo get.
     
     constructor static FieldCopyStrategy():
         addStrategy('force', 'copyForce').
-        addStrategy('replace', 'copyToAvailableOrReplace').
-        addStrategy('empty', 'copyOnlyToAvailable').
+        addStrategy('merge', 'copyMerge').
+        addStrategy('available', 'copyToAvailable').
     end constructor.
     
     def static private temp-table strategy
@@ -35,12 +35,13 @@ class classes.BufferUtil.FieldCopyStrategy:
         
         return Progress.Lang.Class
             :getClass('classes.BufferUtil.FieldCopyStrategy')
-            :Invoke(strategy.method, params:build()).
+            :Invoke(new FieldCopyStrategy(), strategy.method, params:build()).
     end method.
     
-    method public static log copyForce(pSource as Buffer, pTarget as Buffer, pField as char):
+    method public log copyForce(pSource as Buffer, pTarget as Buffer, pField as char):
         def var i as int no-undo.
         def var limit as int no-undo.
+        
         if not pSource:has(pField) or not pTarget:has(pField) then return false.
         
         do on error undo, throw:        
@@ -66,16 +67,33 @@ class classes.BufferUtil.FieldCopyStrategy:
         end.    
     end method.
     
-    method public static log copyToAvailableOrReplace(pSource as Buffer, pTarget as Buffer, pField as char):
+    method public log copyMerge(pSource as Buffer, pTarget as Buffer, pField as char):
         def var i as int no-undo.
         def var sourceFill as int no-undo.
         def var targetAvailable as int no-undo.
         def var sourceFillCount as int no-undo.
         def var targetAvailCount as int no-undo.
         def var targetInitial as char no-undo.
+        def var sourceType as char no-undo.
+        def var targetType as char no-undo.
         
         if not pSource:has(pField) or not pTarget:has(pField) then return false.
-        assign targetInitial = pTarget:initial(pField).
+        assign 
+            targetInitial = pTarget:initial(pField)
+            sourceType = pSource:type(pField)
+            targetType = pTarget:type(pField).
+        
+        if targetInitial = "0" and (
+            targetType = "integer"
+            or targetType = "int64"
+            or targetType = "decimal"
+        ) and (
+            sourceType <> "integer"
+            and sourceType <> "int64"
+            and sourceType <> "decimal"
+        ) then do:
+            assign targetInitial = "".
+        end.
         
         do on error undo, throw:
             if pSource:extent(pField) = 0 and pTarget:extent(pField) = 0 then do:
@@ -83,7 +101,7 @@ class classes.BufferUtil.FieldCopyStrategy:
                 pTarget:updateField(pField, pSource:field(pField):buffer-value).
             end.
             else if pSource:extent(pField) = 0 then do:
-                if pSource:field(pField):string-value = targetInitial then return false.
+                if pSource:value(pField) = targetInitial then return false.
                 assign targetAvailCount = pTarget:fieldCountInitial(pField).
                 
                 if targetAvailCount = 0 then do:
@@ -96,18 +114,17 @@ class classes.BufferUtil.FieldCopyStrategy:
             end.
             else if pTarget:extent(pField) = 0 then do:
                 if pSource:fieldCountValueNotEqual(pField, targetInitial) = 0 then return false.
-                assign sourceFill = pSource:nextPositionWithValueNotEqual(pField, targetInitial).
+                assign sourceFill = pSource:nextPositionWithValueNotEqual(pField, targetInitial, sourceFill).
                 pTarget:updateField(pField, pSource:field(pField):buffer-value(sourceFill)).
             end.
             else do:
                 assign
                     sourceFillCount = pSource:fieldCountValueNotEqual(pField, targetInitial)
                     targetAvailCount = pTarget:fieldCountInitial(pField).
-                
                 if sourceFillCount < targetAvailCount then do:
                     do i = 1 to sourceFillCount:
                         assign 
-                            sourceFill = pSource:nextPositionWithValueNotEqual(pField, targetInitial)
+                            sourceFill = pSource:nextPositionWithValueNotEqual(pField, targetInitial, sourceFill)
                             targetAvailable = pTarget:nextPositionWithInitial(pField).
                         pTarget:updateField(pField, pSource:field(pField):buffer-value(sourceFill), targetAvailable).
                     end.
@@ -115,7 +132,7 @@ class classes.BufferUtil.FieldCopyStrategy:
                 else do:
                     do i = 1 to minimum(pTarget:extent(pField), sourceFillCount):
                         assign 
-                            sourceFill = pSource:nextPositionWithValueNotEqual(pField, targetInitial).
+                            sourceFill = pSource:nextPositionWithValueNotEqual(pField, targetInitial, sourceFill).
                         pTarget:updateField(pField, pSource:field(pField):buffer-value(sourceFill), i).
                     end.
                 end.
@@ -128,15 +145,33 @@ class classes.BufferUtil.FieldCopyStrategy:
         end.
     end method.
     
-    method public static log copyOnlyToAvailable(pSource as Buffer, pTarget as Buffer, pField as char):
+    method public log copyToAvailable(pSource as Buffer, pTarget as Buffer, pField as char):
         def var targetInitial as char no-undo.
         def var targetAvailPos as int no-undo.
         def var sourceFillPos as int no-undo.
+        def var sourceType as char no-undo.
+        def var targetType as char no-undo.
         def var iterations as int no-undo.
         def var i as int no-undo.
         
         if not pSource:has(pField) or not pTarget:has(pField) then return false.
-        assign targetInitial = pTarget:initial(pField).
+        assign 
+            targetInitial = pTarget:initial(pField)
+            sourceType = pSource:type(pField)
+            targetType = pTarget:type(pField).
+        
+        if targetInitial = "0" and (
+            targetType = "integer"
+            or targetType = "int64"
+            or targetType = "decimal"
+        ) and (
+            sourceType <> "integer"
+            and sourceType <> "int64"
+            and sourceType <> "decimal"
+        ) then do:
+            assign targetInitial = "".
+        end.
+        
         do on error undo:
             if pSource:extent(pField) = 0 and pTarget:extent(pField) = 0 then do:
                 if pSource:value(pField) = targetInitial or pTarget:value(pField) <> targetInitial then return false.
@@ -149,7 +184,7 @@ class classes.BufferUtil.FieldCopyStrategy:
             end.
             else if pTarget:extent(pField) = 0 then do:
                 if pSource:fieldCountValueNotEqual(pField, targetInitial) = 0 or not pTarget:fieldHasInitial(pField) then return false.
-                assign sourceFillPos = pSource:nextPositionWithValueNotEqual(pField, targetInitial).
+                assign sourceFillPos = pSource:nextPositionWithValueNotEqual(pField, targetInitial, sourceFillPos).
                 pTarget:updateField(pField, pSource:field(pField):buffer-value(sourceFillPos)).
             end.
             else do:
@@ -161,7 +196,7 @@ class classes.BufferUtil.FieldCopyStrategy:
                 do i = 1 to iterations:
                     assign
                         targetAvailPos = pTarget:nextPositionWithInitial(pField)
-                        sourceFillPos = pSource:nextPositionWithValueNotEqual(pField, targetInitial).
+                        sourceFillPos = pSource:nextPositionWithValueNotEqual(pField, targetInitial, sourceFillPos).
                     pTarget:updateField(pField, pSource:field(pField):buffer-value(sourceFillPos), targetAvailPos).    
                 end.
             end.
