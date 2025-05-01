@@ -24,7 +24,7 @@ class classes.BufferUtil.Query:
         createBuffer(pBuffer).
         assign
             buffers.name = pBuffer
-            buffers.buffer = new B(pBuffer).
+            buffers.buffer = new Buffer(pBuffer).
         return this-object.    
     end method.
     
@@ -37,15 +37,15 @@ class classes.BufferUtil.Query:
         assign
             pBuffer:name = pName
             buffers.name = pBuffer:name
-            buffers.buffer = new B(pBuffer).
+            buffers.buffer = new Buffer(pBuffer).
         return this-object.    
     end method.
     
-    method public Query addBuffer(pBuffer as B):
+    method public Query addBuffer(pBuffer as Buffer):
         return addBuffer(pBuffer, pBuffer:name()).
     end method.    
     
-    method public Query addBuffer(pBuffer as B, pName as character):
+    method public Query addBuffer(pBuffer as Buffer, pName as character):
         createBuffer(pName).
         assign
             pBuffer:handle:name = pName
@@ -54,15 +54,15 @@ class classes.BufferUtil.Query:
         return this-object.    
     end method.
     
-    method public B getBuffer(pBuffer as character):
+    method public Buffer getBuffer(pBuffer as character):
         if findBuffer(pBuffer) then do:
-            return cast(buffers.buffer, B).
+            return cast(buffers.buffer, Buffer).
         end.
     end method.
     
     method public handle getField(pBuffer as character, pField as character):
         if findBuffer(pBuffer) then do:
-            return cast(buffers.buffer, B):field(pField).
+            return cast(buffers.buffer, Buffer):field(pField).
         end.
     end method.
     

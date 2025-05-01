@@ -6,37 +6,26 @@ using classes.StringUtil.* from propath.
 class classes.BufferUtil.Table:
     def public property count as int no-undo get. protected set.
     def public property handle as handle no-undo get. protected set.
+    def public property buffer as Buffer no-undo get. protected set. 
         
     def public property prepared as log no-undo
         get:
-            if valid-handle(handle) then do:
-                return handle:prepared.
-            end.
-            return false.
+            if not valid-handle(handle) then return false.
+            return handle:prepared.
         end.
         
-    def public property buffer as handle no-undo
-        get:
-            if valid-handle(handle) then do:
-                return handle:default-buffer-handle.
-            end.
-            return ?.
+    def public property name as char no-undo init 'result' get.
+        set(pName as char):
+            if not prepared then return.
+            assign name = Sanitizer:kebabCase(pName).
         end.
+        
+        
+    constructor Table():
+        create temp-table handle.
+    end constructor.
     
-    def public property bufferObject as Buffer no-undo get. protected set.    
-        
-    def public property name as char no-undo
-        get:
-            if valid-handle(this-object:handle) and this-object:prepared then do:
-                return handle:name.
-            end.
-            return name.
-        end.
-        protected set(pName as char):
-            assign name = pName.
-        end.
-        
-    constructor Table(pBuffer as buffer):
+    constructor Table(pBuffer as Buffer):
         createLike(pBuffer).
     end constructor.
     
@@ -44,8 +33,8 @@ class classes.BufferUtil.Table:
         assign handle = pTable.
     end constructor.
     
-    constructor Table(pName as char):
-        createTable(pName).
+    constructor Table(pLike as char):
+        createLike(pLike).
     end constructor.
     
     method public Table addLike(pExpression as char, pName as char):
@@ -134,34 +123,32 @@ class classes.BufferUtil.Table:
     end method.
     
     method public log clear():
-        return this-object:handle:clear().
+        return handle:clear().
     end method.
     
     method public Table prepare():
         if not prepared then do:
             handle:temp-table-prepare(name).
-            assign bufferObject = new Buffer(this-object:buffer).
+            assign buffer = new Buffer(handle:default-buffer-handle).
         end.
         return this-object.
     end method.
     
     method public int numFields():
-        if not valid-handle(buffer) then do:
-            return 0.
-        end.
-        return buffer:num-fields.
+        if buffer = ? then return 0.
+        return buffer:numFields().
     end method.
     
     method public Table createBuffer():
         prepare().
         assign count = count + 1.    
-        this-object:buffer:buffer-create.
+        buffer:create().
         return this-object.
     end method.
     
     method public Table deleteBuffer():
         if bufferAvailable() then do:
-            buffer:buffer-delete.
+            buffer:delete().
             assign count = count - 1.
         end.
     end method.
@@ -170,31 +157,29 @@ class classes.BufferUtil.Table:
         if not prepared then do:
             return false.
         end.
-        if valid-handle(this-object:buffer) then do:
+        if buffer <> ? then do:
             return this-object:buffer:available.
         end.
         return false.
     end method.
     
     method public Table setName(pName as char):
-        if not prepared then do:
-            assign name = pName.
-        end.
+        assign name = pName.
         return this-object.
     end method.
     
     method public Table fieldCopy(pBuffer as handle, pField as char):
-        bufferObject:fieldCopy(pBuffer, pField).
+        buffer:fieldCopy(pBuffer, pField).
         return this-object.
     end method.
     
     method public Table fieldCopy(pBuffer as buffer, pField as char):
-        bufferObject:fieldCopy(pBuffer, pField).
+        buffer:fieldCopy(pBuffer, pField).
         return this-object.
     end method.
     
     method public Table fieldCopy(pTable as table, pField as char):
-        return fieldCopy(pTable:bufferObject, pField).
+        return fieldCopy(pTable:buffer, pField).
     end method.
     
     method public Table bufferCopy(pBuffer as handle):
@@ -203,7 +188,7 @@ class classes.BufferUtil.Table:
     
     method public Table bufferCopy(pBuffer as handle, pNew as log):
         if not bufferAvailable() or pNew then createBuffer().
-        bufferObject:copy(pBuffer).
+        buffer:copy(pBuffer).
         return this-object.
     end method.
     
@@ -213,13 +198,13 @@ class classes.BufferUtil.Table:
     
     method public Table bufferCopy(pBuffer as Buffer, pNew as log):
         if not bufferAvailable() or pNew then createBuffer().
-        bufferObject:copy(pBuffer).
+        buffer:copy(pBuffer).
         return this-object.
     end method.
     
     method protected void reset():
         if valid-handle(handle) then do:
-            delete object bufferObject no-error.
+            delete object buffer no-error.
             delete object handle no-error.
             assign name = ''.
         end.
