@@ -293,4 +293,83 @@ class tests.BufferTestCase inherits ABLTestCase:
         btt1:copy(btt2, 'merge').
         assertTrue(btt1:value('c3', 1) = 'abc-test-1' and btt1:value('c3', 2) = 'def-test-1').
     end method.
+    
+    method public void testCopyStrategyMerge5():
+        btt1:setInitial('c6').
+        btt1:copy(btt2, 'merge').
+        assertTrue(btt1:fieldEqual(btt2, 'c6')).
+    end method.
+    
+    method public void testCopyStrategyMerge6():
+        btt1:copy(btt2, 'merge').
+        assertTrue(btt1:fieldEqual(btt2, 'c6')).
+    end method.
+    
+    method public void testCopyStrategyMerge7():
+        btt2:setInitial('c6', 1).
+        btt1:copy(btt2, 'merge').    
+        assertTrue(btt1:value('c6', 1) = btt2:value('c6', 2) and btt1:value('c6', 2) = string(today - 28)).
+    end method.
+    
+    method public void testCopyStrategyMerge8():
+        btt2:setInitial('c6').
+        btt1:copy(btt2, 'merge').
+        assertTrue(btt1:value('c6', 1) = string(today - 30) and btt1:value('c6', 2) = string(today - 28)).
+    end method.
+    
+    method public void testCopyStrategyMerge9():
+        btt3:setInitial('c1', 2).
+        btt3:copy(btt1, 'merge').
+        assertEqual(btt3:value('c1', 2), btt1:value('c1')).
+    end method.
+    
+    method public void testCopyStrategyMerge10():
+        btt3:copy(btt4, 'merge').
+        assertTrue(btt3:value('c5', 1) = btt4:value('c5', 1) and btt3:value('c5', 2) = btt4:value('c5', 2)).
+    end method.
+    
+    method public void testCopyStrategyMerge11():
+        btt3:updateField('c5', 8999, 1).
+        btt3:updateField('c5', 8788, 2).
+        btt4:copy(btt3, 'merge').
+        assertTrue(btt4:value('c5', 1) = btt3:value('c5', 1) and btt4:value('c5', 2) = btt3:value('c5', 2)).       
+    end method.
+    
+    method public void testCopyStrategyMerge12():
+        btt1:setInitial('c5').
+        btt3:copy(btt1, 'merge').
+        assertTrue(btt3:value('c5', 1) = '8932' and btt3:value('c5', 2) = 'ligs').
+    end method.
+    
+    method public void testCopyStrategyMerge13():
+        btt3:copy(btt1, 'merge').
+        assertTrue(btt3:value('c5', 3) = btt1:value('c5')).
+    end method.
+    
+    method public void testCopyStrategyForce1():
+        btt1:copy(btt2, 'force').
+        assertTrue(btt1:fieldEqual(btt2, 'c1') and btt1:fieldEqual(btt2, 'c2')).
+    end method.
+    
+    method public void testCopyStrategyForce2():
+        btt2:setInitial('c2').
+        btt1:copy(btt2, 'force').
+        assertTrue(btt1:fieldEqual(btt2, 'c2')).
+    end method.
+    
+    method public void testCopyStrategyForce3():
+        btt3:setInitial('c5', 2).
+        btt3:copy(btt1, 'force').
+        assertTrue(btt1:value('c5') = btt3:value('c5', 1) and btt3:fieldHasInitial('c5', 2)).
+    end method.
+    
+    method public void testCopyStrategyForce4():
+        btt1:copy(btt3).
+        assertTrue(
+            btt1:value('c1') = btt3:value('c1', 1) 
+            and btt1:value('c5') <> btt3:value('c5', 1) 
+            and btt1:value('c3', 1) = btt3:value('c3') 
+            and btt1:value('c3', 2) = 'def-test-1'
+        ).
+    end method.
 end class.

@@ -165,6 +165,14 @@ class classes.BufferUtil.Buffer:
         return updateField(pField, initial(pField), pExtent).
     end method.
     
+    method public Buffer setInitials(pField as char):
+        def var i as int no-undo.
+        do i = 1 to numFields():
+            setInitial(fieldName(i)).
+        end.
+        return this-object.
+    end method.
+    
     method public log updateField(pField as char, pValue as char):
         return updateField(pField, pValue, 0).
     end method.

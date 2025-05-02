@@ -48,10 +48,11 @@ class classes.BufferUtil.FieldCopyStrategy:
             if pSource:extent(pField) = 0 and pTarget:extent(pField) = 0 then do:
                 pTarget:updateField(pField, pSource:field(pField):buffer-value).
             end.
-            else if pSource:extent(pField) = pTarget:extent(pField) then do:
-                do i = 1 to pSource:extent(pField):
-                    pTarget:updateField(pField, pSource:field(pField):buffer-value(i), i).
-                end.
+            else if pSource:extent(pField) = 0 then do:
+                pTarget:updateField(pField, pSource:field(pField):buffer-value, 1).
+            end.
+            else if pTarget:extent(pField) = 0 then do:
+                pTarget:updateField(pField, pSource:field(pField):buffer-value(1)).
             end.
             else do:
                 assign limit = minimum(pSource:extent(pField), pTarget:extent(pField)).
