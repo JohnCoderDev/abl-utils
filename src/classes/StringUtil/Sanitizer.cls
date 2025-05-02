@@ -120,10 +120,11 @@ class classes.StringUtil.Sanitizer:
     method public static char kebabCase(pSource as char):
         def var cased as char no-undo.
         assign
-            cased = normalAlphaNum(pSource)
-            cased = lower(cased)
-            cased = shiftLeftNumbers(cased)
+            cased = filterChars(pSource, Alphabet:nonKebabSpecial, true)
+            cased = replaceAccentChars(cased)
             cased = wipeSpaces(cased)
+            cased = shiftLeftNumbers(cased)
+            cased = lower(cased)
             cased = replaceChars(cased, ' ', '-').
         return cased.    
     end method.

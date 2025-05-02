@@ -6,6 +6,7 @@ class classes.StringUtil.Alphabet:
     def public static property accentChars as char no-undo init 'áàâãäéèêëíìîïóòõôöúùûüçñÿı' get. private set.
     def public static property accentCharsReplacement as char no-undo init 'aaaaaeeeeiiiiooooouuuucnyy' get. private set.
     def public static property special as char no-undo init '~'"!@#$%¨&*()_+¹²³£¢¬§-´[`ª~{~~^}]º:;?/°,.<>|\' get. private set.
+    def public static property nonKebabSpecial as char no-undo init '~'"!@#$%¨&*()_+¹²³£¢¬§´[`ª~{~~^}]º:;?/°,.<>|\' get. private set.
     def public static property blankchars as char no-undo init ' ~t~n' get. private set.
     def public static property commonPuncts as char no-undo init ',.;:?!$()' get. private set.
     def public static property mathOperators as char init '+-*/' no-undo get. private set.

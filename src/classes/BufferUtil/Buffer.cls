@@ -771,16 +771,6 @@ class classes.BufferUtil.Buffer:
         return this-object.
     end method.
     
-    method public Table getBufferDifferences(pBuffer as Buffer, pFieldName as char, pLeftName as char, pRightName as char):
-        def var diffs as Table no-undo.
-        assign diffs = new Table().
-        diffs
-            :addField(pFieldName, 'character')
-            :addField(pLeftName, 'character')
-            :addField(pRightName, 'character').
-            
-    end method.
-    
     method public log fieldEqual(pBuffer as Buffer, pField as char):
         return fieldEqual(pBuffer, pField, true).
     end method.

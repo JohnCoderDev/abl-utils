@@ -30,7 +30,9 @@ class classes.BufferUtil.Table:
     end constructor.
     
     constructor Table(pTable as handle):
-        assign handle = pTable.
+        assign 
+            handle = pTable
+            name = handle:name.
     end constructor.
     
     constructor Table(pLike as char):
@@ -73,7 +75,7 @@ class classes.BufferUtil.Table:
     end method.
     
     method public Table addField(pName as char, pType as char, pExtent as int, pInitial as char, pLabel as char):
-        handle:add-new-field(pName, pType, pExtent, ?, pInitial, pLabel, pLabel).
+        handle:add-new-field(Sanitizer:kebabCase(pName), pType, pExtent, ?, pInitial, pLabel, pLabel).
         return this-object.
     end method.
     
@@ -104,13 +106,17 @@ class classes.BufferUtil.Table:
         return this-object.
     end method.
     
-    method public Table createLike(pBuffer as buffer):
+    method public Table createLike(pBuffer as Buffer):
         return createLike(pBuffer:handle).
+    end method.
+    
+    method public Table createLike(pTable as Table):
+        return createLike(pTable:buffer).
     end method.
     
     method protected void createTempTable(pName as char):
         create temp-table handle.
-        assign name = Sanitizer:kebabCase(pName).
+        assign name = pName.
     end method.
     
     method public Table copy(pTable as handle):
