@@ -5,7 +5,8 @@ new ABLTestCollection()
     :addTest("tests.MatcherTestCase")
     :addTest("tests.ArgumentSplitterTestCase")
     :addTest("tests.MaskerTestCase")*/
-    :addTest('tests.BufferTestCase')
+    //:addTest('tests.BufferTestCase')
+    :addTest('tests.SplitterTestCase')
     :runTests()
     :writeFile("C:\Users\vboxuser\programming\projects\abl-utils\tests-results.html").
 
