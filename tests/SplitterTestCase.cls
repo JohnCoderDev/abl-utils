@@ -75,4 +75,29 @@ class tests.SplitterTestCase inherits ABLTestCase:
         assign c = 'test, 1234'.
         assertEqual(Splitter:textBefore(c, ',', 2), '').
     end method.
+    
+    method public void testSplitterBetween1():
+        assign c = 'test 1234'.
+        assertEqual(Splitter:textBetween(c, 3, 7), 'st 12').
+    end method.
+    
+    method public void testSplitterBetween2():
+        assign c = 'test 1234'.
+        assertEqual(Splitter:textBetween(c, 3, 20), 'st 1234').
+    end method.
+    
+    method public void testSplitterBetween3():
+        assign c = 'test 1234'.
+        assertEqual(Splitter:textBetween(c, 20, 40), '').
+    end method.
+    
+    method public void testSplitterBetween4():
+        assign c = 'test 1234'.
+        assertEqual(Splitter:textBetween(c, 20, 10), '').
+    end method.
+    
+    method public void testSplitterBetween5():
+        assign c = 'test 1234'.
+        assertEqual(Splitter:textBetween(c, -1, 4), 'test').
+    end method.
 end class.

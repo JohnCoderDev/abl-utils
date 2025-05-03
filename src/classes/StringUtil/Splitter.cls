@@ -39,7 +39,8 @@ class classes.StringUtil.Splitter:
     end method.
     
     method public static char textBetween(pText as char, pStart as int, pEnd as int):
+        if pStart < 1 then assign pStart = 1.
         if pEnd <= pStart then return ''.
-        return substring(pText, pStart, pEnd - pStart).
+        return substring(pText, pStart, pEnd - pStart + 1).
     end method.
 end class.
