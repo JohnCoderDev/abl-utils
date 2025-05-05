@@ -9,7 +9,7 @@ class classes.StringUtil.Matcher:
         end.
         
     constructor static Matcher():
-        assign sensitive = true.
+        assign sensitive = false.
     end constructor.
     
     method public static log startsWith(pSource as char, pStart as char):

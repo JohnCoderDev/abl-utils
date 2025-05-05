@@ -2,9 +2,9 @@ block-level on error undo, throw.
 using classes.StringUtil.* from propath.
 
 class classes.StringUtil.ArgumentSplitter:
-    def public property argument as char no-undo get. private set.
-    def public property delimiter as char no-undo init ' ' get. private set.
-    def public property argumentNameIndicator as char no-undo init '-,--' get. private set.
+    def public property argument as char no-undo get. protected set.
+    def public property delimiter as char no-undo init ' ' get. protected set.
+    def public property argumentNameIndicator as char no-undo init '-,--' get. protected set.
     
     def private temp-table arguments
         field argName as char
@@ -81,6 +81,25 @@ class classes.StringUtil.ArgumentSplitter:
         return ''.
     end method.
     
+    method public char previous():
+        return previous('').
+    end method.
+    
+    method public char previous(pName as char):
+        if not avail arguments then do:
+            return get(pName).
+        end.
+        if findPrevArg(pName) then do:
+            return arguments.argValue.
+        end.
+        return ''.
+    end method.
+    
+    method public char current():
+        if not avail arguments then return ''.
+        return arguments.argValue.
+    end method.
+    
     method protected log findArg(pName as char):
         find first arguments
             where arguments.argName = pName
@@ -88,8 +107,15 @@ class classes.StringUtil.ArgumentSplitter:
         return avail arguments.    
     end method.
     
-    method public log findNextArg(pName as char):
+    method protected log findNextArg(pName as char):
         find next arguments
+            where arguments.argName = pName
+            no-error.
+        return avail arguments.    
+    end method.
+    
+    method public log findPrevArg(pName as char):
+        find prev arguments
             where arguments.argName = pName
             no-error.
         return avail arguments.    

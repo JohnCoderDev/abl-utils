@@ -10,7 +10,7 @@ class classes.BufferUtil.Buffer:
     def public property name as char no-undo
         get:
             if not valid-handle(handle) then return ''.
-            handle:name.
+            return handle:name.
         end.
     
     def public property available as log no-undo
@@ -26,31 +26,44 @@ class classes.BufferUtil.Buffer:
         changeBuffer(pBuffer).
     end constructor.
     
-    constructor Buffer(pBuffer as handle, pIsTT as log):
-        changeBuffer(pBuffer, pIsTT).
+    constructor Buffer(pBuffer as char, pName as char):
+        changeBuffer(pBuffer, pName).
     end constructor.
     
     constructor Buffer(pBuffer as handle):
-        changeBuffer(pBuffer).
+        parseBuffer(pBuffer).
+    end constructor.
+    
+    constructor Buffer(pBuffer as handle, pName as char):
+        changeBuffer(pBuffer, pName).
     end constructor.
     
     method public Buffer changeBuffer(pBuffer as char):
-        create buffer handle for table pBuffer.
+        return changeBuffer(pBuffer, pBuffer).
+    end method.
+    
+    method public Buffer changeBuffer(pBuffer as char, pName as char):
+        create buffer handle for table pBuffer buffer-name pName.
         return this-object.
     end method.
     
     method public Buffer changeBuffer(pBuffer as handle):
-        return changeBuffer(pBuffer, false).
+        create buffer handle for table pBuffer.
+        return this-object.
     end method.
     
-    method public Buffer changeBuffer(pBuffer as handle, pIsTT as log):
-        if pIsTT then do:
-            assign handle = pBuffer:default-buffer-handle.
-        end.
-        else do:
-            assign handle = pBuffer.
-        end.
+    method public Buffer changeBuffer(pBuffer as handle, pName as char):
+        create buffer handle for table pBuffer buffer-name pName.
         return this-object.
+    end method.
+    
+    method public Buffer parseBuffer(pBuffer as handle):
+        assign handle = pBuffer.
+        return this-object.
+    end method.
+    
+    method public override object clone():
+        return new Buffer():changeBuffer(handle).
     end method.
     
     method public Buffer create():
@@ -796,4 +809,65 @@ class classes.BufferUtil.Buffer:
         copyTable:buffer:handle:serialize-row('JSON', 'JsonObject', resultJson, false, ?, false, true).
         return resultJson.
     end method.
+    
+    method public JsonObject toJson(pFields as char):
+        return toJson(pFields, false).
+    end method.
+    
+    method public JsonObject toJson(pFields as char, pExclude as log):
+        def var resultJson as JsonObject no-undo.
+        def var auxArray as JsonArray no-undo.
+        def var fieldHandle as handle no-undo.
+        def var currentField as char no-undo.
+        def var i as int no-undo.
+        def var j as int no-undo.
+        assign resultJson = new JsonObject().
+        
+        do i = 1 to numFields():
+            assign fieldHandle = this-object:field(i).
+            if pExclude and Matcher:contains(pFields, fieldHandle:name) then next.
+            if not pExclude and not Matcher:contains(pFields, fieldHandle:name) then next.
+            
+            if fieldHandle:extent > 0 then do:
+                assign auxArray = new JsonArray().
+                do j = 1 to fieldHandle:extent:
+                    auxArray:add(fieldHandle:buffer-value(j)).
+                end.
+                resultJson:add(fieldHandle:name, auxArray).
+            end.
+            else do:
+                resultJson:add(fieldHandle:name, fieldHandle:buffer-value).
+            end.
+        end.
+        
+        return resultJson.
+    end method.
+                                                        
+    method public override char toString():
+        def var i as int no-undo.
+        def var resultString as char no-undo.
+        do i = 1 to numFields():
+            assign resultString = resultString + fieldName(i) + ' = ' + this-object:value(i) + '~n'.
+        end.
+        return resultString.
+    end method.
+    
+    method public char toString(pFields as char):
+        return toString(pFields, false).
+    end method.
+    
+    method public char toString(pFields as char, pExclude as log):
+        def var resultString as char no-undo.
+        def var i as int no-undo.
+        do i = 1 to numFields():
+            if Matcher:contains(pFields, fieldName(i)) and pExclude then next.
+            if not Matcher:contains(pFields, fieldName(i)) and not pExclude then next.
+            assign resultString = resultString + fieldName(i) + ' = ' + this-object:value(i) + '~n'.
+        end.
+        return resultString.
+    end.
+    
+    destructor Buffer():
+        delete object handle no-error.
+    end destructor.
 end class.

@@ -43,4 +43,8 @@ class classes.StringUtil.Splitter:
         if pEnd <= pStart then return ''.
         return substring(pText, pStart, pEnd - pStart + 1).
     end method.
+    
+    method public static char crop(pText as char, pNumChars as int):
+        return substring(pText, 1, pNumChars).
+    end method.
 end class.
