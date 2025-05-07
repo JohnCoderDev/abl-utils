@@ -842,7 +842,24 @@ class classes.BufferUtil.Buffer:
         
         return resultJson.
     end method.
-                                                        
+    
+    method public char label(pIndex as int):
+        if has(pIndex) then do:
+            return this-object:label(fieldName(pIndex)).
+        end.
+    end method.
+    
+    method public char label(pField as char):
+        if has(pField) then do:
+            def var availableLabel as char no-undo.
+            assign 
+                availableLabel = this-object:field(pField):label
+                availableLabel = if availableLabel = ? then this-object:field(pField):column-label else availableLabel
+                availableLabel = if availableLabel = ? then '' else availableLabel.
+            return availableLabel.    
+        end.
+    end method.
+    
     method public override char toString():
         def var i as int no-undo.
         def var resultString as char no-undo.
