@@ -156,10 +156,10 @@ class classes.BufferUtil.Query:
     
     method public handle getField(pField as char):
         def var b as Buffer no-undo.
-        for each buffers where buffers.buffer <> ?:
-            assign b = cast(buffers.buffer, Buffer).
-            if b:has(pField) then return b:field(pField).
-        end.
+        assign b = getBufferOfField(pField).
+        if b = ? then
+            if b:has(pField) then
+                return b:field(pField).
     end method.
     
     method public handle getField(pField as char, pBuffer as char):
@@ -170,21 +170,27 @@ class classes.BufferUtil.Query:
         end.
     end method.
     
-    method public char getValue(pField as char):
-        def var f as handle no-undo.
-        assign f = getField(pField).
-        if f <> ? then do:
-            return string(f:buffer-value).
+    method public Buffer getBufferOfField(pField as char):
+        def var b as Buffer no-undo.
+        for each buffers where buffers.buffer <> ?:
+            assign b = cast(buffers.buffer, Buffer).
+            if b:has(pField) then return b.
         end.
+    end method.
+    
+    method public char getValue(pField as char):
+        def var b as Buffer no-undo.
+        assign b = getBufferOfField(pField).
+        if b <> ? then return b:value(pField).
         return ''.
     end method.
     
     method public char getValue(pField as char, pBuffer as char):
-        def var f as handle no-undo.
-        assign f = getField(pField, pBuffer).
-        if f <> ? then do:
-            return string(f:buffer-value).
-        end.
+        def var b as Buffer no-undo.
+        assign b = getBuffer(pBuffer).
+        if b <> ? then
+            if b:has(pField) then
+                return b:value(pField).
         return ''.
     end method.
     
