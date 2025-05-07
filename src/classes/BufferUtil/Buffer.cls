@@ -273,14 +273,14 @@ class classes.BufferUtil.Buffer:
             assign fieldHandle = this-object:field(pField).
             if pExtent > 0 then do:    
                 case fieldHandle:data-type:
-                    when 'character' then fieldHandle:buffer-value(pExtent) = string(pValue).
-                    when 'integer' then fieldHandle:buffer-value(pExtent) = integer(pValue).
-                    when 'int64' then fieldHandle:buffer-value(pExtent) = int64(pValue).
-                    when 'decimal' then fieldHandle:buffer-value(pExtent) = dec(pValue).
-                    when 'date' then fieldHandle:buffer-value(pExtent) = date(pValue).
-                    when 'datetime' then fieldHandle:buffer-value(pExtent) = datetime(pValue).
-                    when 'datetime-tz' then fieldHandle:buffer-value(pExtent) = datetime-tz(pValue).
-                    when 'logical' then fieldHandle:buffer-value(pExtent) = logical(pValue).
+                    when 'character' then fieldHandle:buffer-value(pExtent) = string(trim(pValue)).
+                    when 'integer' then fieldHandle:buffer-value(pExtent) = integer(trim(pValue)).
+                    when 'int64' then fieldHandle:buffer-value(pExtent) = int64(trim(pValue)).
+                    when 'decimal' then fieldHandle:buffer-value(pExtent) = dec(trim(pValue)).
+                    when 'date' then fieldHandle:buffer-value(pExtent) = date(trim(pValue)).
+                    when 'datetime' then fieldHandle:buffer-value(pExtent) = datetime(trim(pValue)).
+                    when 'datetime-tz' then fieldHandle:buffer-value(pExtent) = datetime-tz(trim(pValue)).
+                    when 'logical' then fieldHandle:buffer-value(pExtent) = logical(trim(pValue)).
                 end case.
             end.
             else do:
@@ -292,14 +292,14 @@ class classes.BufferUtil.Buffer:
                 end.
                 else do:
                     case fieldHandle:data-type:
-                        when 'character' then fieldHandle:buffer-value = string(pValue).
-                        when 'integer' then fieldHandle:buffer-value = integer(pValue).
-                        when 'int64' then fieldHandle:buffer-value = int64(pValue).
-                        when 'decimal' then fieldHandle:buffer-value = dec(pValue).
-                        when 'date' then fieldHandle:buffer-value = date(pValue).
-                        when 'datetime' then fieldHandle:buffer-value = datetime(pValue).
-                        when 'datetime-tz' then fieldHandle:buffer-value = datetime-tz(pValue).
-                        when 'logical' then fieldHandle:buffer-value = logical(pValue).
+                        when 'character' then fieldHandle:buffer-value = string(trim(pValue)).
+                        when 'integer' then fieldHandle:buffer-value = integer(trim(pValue)).
+                        when 'int64' then fieldHandle:buffer-value = int64(trim(pValue)).
+                        when 'decimal' then fieldHandle:buffer-value = dec(trim(pValue)).
+                        when 'date' then fieldHandle:buffer-value = date(trim(pValue)).
+                        when 'datetime' then fieldHandle:buffer-value = datetime(trim(pValue)).
+                        when 'datetime-tz' then fieldHandle:buffer-value = datetime-tz(trim(pValue)).
+                        when 'logical' then fieldHandle:buffer-value = logical(trim(pValue)).
                     end case.
                 end.    
             end.
