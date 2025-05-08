@@ -124,6 +124,7 @@ class classes.StringUtil.Sanitizer:
             cased = replaceAccentChars(cased)
             cased = wipeSpaces(cased)
             cased = shiftLeftNumbers(cased)
+            cased = shiftLeft(cased, '-_')
             cased = lower(cased)
             cased = replaceChars(cased, ' ', '-').
         return cased.    

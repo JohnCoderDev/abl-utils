@@ -24,6 +24,20 @@ class classes.StringUtil.Splitter:
         return textBefore(pText, pDelim, 1).
     end method.
     
+    method public static char textAfter(pText as char, pStart as int):
+        if pStart <= 0 then do:
+            return ''.
+        end.
+        return substring(pText, pStart + 1).
+    end method.
+    
+    method public static char textBefore(pText as char, pEnd as int):
+        if pEnd <= 1 then do:
+            return ''.
+        end.
+        return substring(pText, 1, pEnd - 1).
+    end method.
+    
     method public static char textBefore(pText as char, pDelim as char, pOcurrence as int):
         if pOcurrence < 1 then return ''.
         def var c as int no-undo.

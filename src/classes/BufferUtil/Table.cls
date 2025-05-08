@@ -20,6 +20,10 @@ class classes.BufferUtil.Table:
             assign name = Sanitizer:kebabCase(pName).
         end.
         
+    def temp-table formulas
+        field fieldTarget as char
+        field formula as char
+        index idxField as primary unique fieldTarget.
         
     constructor Table():
         create temp-table handle.
@@ -206,6 +210,25 @@ class classes.BufferUtil.Table:
         if not bufferAvailable() or pNew then createBuffer().
         buffer:copy(pBuffer).
         return this-object.
+    end method.
+    
+    method public Table addFormula(pField as char, pFormula as char):
+        if not findFormula(pField) then do:
+            create formulas.
+        end.
+        
+        assign
+            formulas.fieldTarget = pField
+            formulas.formula = pFormula.
+            
+        return this-object.    
+    end method.
+    
+    method protected log findFormula(pField as char):
+        find first formulas 
+            where formulas.fieldTarget = pField
+            no-error.
+        return avail formulas.    
     end method.
     
     method protected void reset():

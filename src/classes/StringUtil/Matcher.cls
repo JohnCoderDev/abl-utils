@@ -1,4 +1,5 @@
 block-level on error undo, throw.
+using Progress.Lang.* from propath.
 using classes.StringUtil.* from propath.
 
 class classes.StringUtil.Matcher:
@@ -151,5 +152,39 @@ class classes.StringUtil.Matcher:
     
     method public static log hasOnlyNumbers(pSource as char):
         return length(Sanitizer:numbers(pSource)) = length(pSource) and pSource <> ''.
+    end method.
+    
+    method public static log isValidFieldName(pSource as char):
+        return Sanitizer:kebabCase(pSource) = pSource.
+    end method.
+    
+    method public static log isNumeric(pSource as char):
+        do on error undo, throw:
+            assign pSource = Sanitizer:wipeSpaces(pSource).
+            if pSource = '' or pSource = '+' or pSource = '-' then do:
+                return false.
+            end.
+            dec(pSource).
+            return true.
+            
+            catch errorObject as Error:
+                return false.
+            end catch.
+        end.
+    end method.
+    
+    method public static log isDate(pSource as char):
+        do on error undo, throw:
+            assign pSource = Sanitizer:wipeSpaces(pSource).
+            if pSource = '-' then do:
+                return false.
+            end.
+            date(pSource).
+            return true.
+            
+            catch errorObject as Error:
+                return false.
+            end catch.
+        end.
     end method.
 end class.
