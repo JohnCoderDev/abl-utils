@@ -29,16 +29,32 @@ class classes.Excel.ExcelReportGenerator:
         return parseTable(pTable, pPath, true).
     end method.
     
-    method public Excel parseTable(pTable as Table, pPath as char, pUseLabel as log):
-        return parseBuffer(pTable:buffer, pPath, pUseLabel).
+    method public Excel parseTable(pTable as Table, pPath as char, pFields as char):
+        return parseTable(pTable, pPath, true, pFields).
     end method.
     
-    method public Excel parseBuffer(pBuffer as char, pPath as char, pUseLabel as log):
-        return parseBuffer(new Buffer(pBuffer), pPath, pUseLabel).
+    method public Excel parseTable(pTable as Table, pPath as char, pUseLabel as log):
+        return parseTable(pTable, pPath, pUseLabel, ?).
+    end method.
+    
+    method public Excel parseTable(pTable as Table, pPath as char, pUseLabel as log, pFields as char):
+        return parseBuffer(pTable:buffer, pPath, pUseLabel, pFields).
     end method.
     
     method public Excel parseBuffer(pBuffer as char, pPath as char):
-        return parseBuffer(new Buffer(pBuffer), pPath, true).
+        return parseBuffer(pBuffer, pPath, true).
+    end method.
+    
+    method public Excel parseBuffer(pBuffer as char, pPath as char, pFields as char):
+        return parseBuffer(pBuffer, pPath, true, pFields).
+    end method.
+    
+    method public Excel parseBuffer(pBuffer as char, pPath as char, pUseLabel as log):
+        return parseBuffer(pBuffer, pPath, true, ?).
+    end method.
+    
+    method public Excel parseBuffer(pBuffer as char, pPath as char, pUseLabel as log, pFields as char):
+        return parseBuffer(new Buffer(pBuffer), pPath, pUseLabel, pFields).
     end method.
     
     method public Excel parseBuffer(pBuffer as Buffer, pPath as char):
@@ -46,6 +62,14 @@ class classes.Excel.ExcelReportGenerator:
     end method.
     
     method public Excel parseBuffer(pBuffer as Buffer, pPath as char, pUseLabel as log):
+        return parseBuffer(pBuffer, pPath, pUseLabel, ?).
+    end method.
+    
+    method public Excel parseBuffer(pBuffer as Buffer, pPath as char, pFields as char):
+        return parseBuffer(pBuffer, pPath, true, pFields).
+    end method.
+    
+    method public Excel parseBuffer(pBuffer as Buffer, pPath as char, pUseLabel as log, pFields as char):
         def var xl as Excel no-undo.
         assign xl = new Excel().
         
@@ -57,7 +81,7 @@ class classes.Excel.ExcelReportGenerator:
         end.
         
         xl:createExcel().
-        new CSVWriter():parseBuffer(pBuffer, pUseLabel):writeFile(pPath).
+        new CSVWriter():parseBuffer(pBuffer, pUseLabel, pFields):writeFile(pPath).
         
         xl:CSVToExcel(replace(pPath, '.xlsx', '.csv')).
         xl:openXML(pPath).
@@ -66,6 +90,20 @@ class classes.Excel.ExcelReportGenerator:
         xl:autoFitCurrentRegion().
         xl:save().
         return xl.
+    end method.
+    
+    method public Excel generateTableExample(pBuffer as char, pPath as char, pFields as char):
+        def var tableCopy as Table no-undo.
+        assign tableCopy = new Table().
+        tableCopy:addLike(pBuffer, pFields):createBuffer().
+        return parseTable(tableCopy, pPath, false).
+    end method.
+    
+    method public Excel generateTableExample(pBuffer as char, pPath as char):
+        def var tableCopy as Table no-undo.
+        assign tableCopy = new Table(pBuffer).
+        tableCopy:createBuffer().
+        return parseTable(tableCopy, pPath, false).
     end method.
     
     method protected void applyFormats(pExcel as Excel, pBuffer as Buffer):
@@ -101,7 +139,6 @@ class classes.Excel.ExcelReportGenerator:
                 currentColumn:NumberFormat = columnsFormats.colFormat.
         end.
     end method.
-    
     
     method protected log findColumnFormat(pIndex as int):
         find first columnsFormats

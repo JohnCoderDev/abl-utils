@@ -20,18 +20,44 @@ class classes.Excel.CSVWriter:
     end method.
     
     method public CSVWriter parseBuffer(pBuffer as Buffer, pUseLabel as log):
+        return parseBuffer(pBuffer, pUseLabel, ?).
+    end method.
+    
+    method public CSVWriter parseBuffer(pBuffer as Buffer, pUseLabel as log, pFields as char):
         reset().
         def var queryObject as Query no-undo.
         def var fieldName as char no-undo.
+        def var fieldNames as char no-undo.
         def var i as int no-undo.
         
-        do i = 1 to pBuffer:numFields():
-            fieldName = pBuffer:label(i).
-            addContent(fieldName, false).
+        assign pFields = Sanitizer:wipeSpaces(pFields).
+                
+        if pFields = '' or pFields = ? then do:
+            do i = 1 to pBuffer:numFields():
+                assign
+                    fieldName = if pUseLabel then pBuffer:label(i) else pBuffer:fieldName(i)
+                    fieldNames = fieldNames + pBuffer:fieldName(i) + ' '.
+                addContent(fieldName, false).
+            end.
         end.
+        else do:
+            def var currentName as char no-undo.
+            do i = 1 to num-entries(pFields, ' '):
+                assign currentName = entry(i, pFields, ' ').
+                if pBuffer:has(currentName) then do:
+                    assign
+                        fieldName = if pUseLabel then pBuffer:label(currentName) else currentName
+                        fieldNames = fieldNames + currentName + ' '.
+                    addContent(fieldName, false).    
+                end.
+            end.
+        end.
+        
+        assign fieldNames = Sanitizer:wipeSpaces(fieldNames).
+        
         addNewLine().
         
-        assign queryObject = new Query(pBuffer:name).
+        assign queryObject = new Query(pBuffer:name + ' fields(' + fieldNames + ')').
         queryObject:setBuffer(pBuffer).
         queryObject:first().
         
@@ -39,12 +65,12 @@ class classes.Excel.CSVWriter:
         def var fieldType as char no-undo.
         
         do while not queryObject:offEnd():
-            do i = 1 to pBuffer:numFields():
+            do i = 1 to num-entries(fieldNames, ' '):
                 assign 
-                    fieldName = pBuffer:fieldName(i)
+                    fieldName = entry(i, fieldNames, ' ')
                     fieldValue = queryObject:getValue(fieldName)
-                    fieldType = pBuffer:type(i).
-                
+                    fieldType = pBuffer:type(fieldName).
+                    
                 if Matcher:containsOneOf(fieldType, 'integer,int64,decimal') then do:
                     assign fieldValue = if fieldValue = '' then '0' else fieldValue.
                     addContent(fieldValue, false).
