@@ -161,7 +161,7 @@ class classes.StringUtil.Matcher:
     method public static log isNumeric(pSource as char):
         do on error undo, throw:
             assign pSource = Sanitizer:wipeSpaces(pSource).
-            if pSource = '' or pSource = '+' or pSource = '-' then do:
+            if pSource = '' or pSource = '+' or pSource = '-' or contains(pSource, '*') then do:
                 return false.
             end.
             dec(pSource).
@@ -175,12 +175,10 @@ class classes.StringUtil.Matcher:
     
     method public static log isDate(pSource as char):
         do on error undo, throw:
+            def var d as date no-undo.
             assign pSource = Sanitizer:wipeSpaces(pSource).
-            if pSource = '-' then do:
-                return false.
-            end.
-            date(pSource).
-            return true.
+            assign d = date(pSource).
+            return d <> ?.
             
             catch errorObject as Error:
                 return false.

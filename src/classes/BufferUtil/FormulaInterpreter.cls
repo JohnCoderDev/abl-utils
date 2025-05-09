@@ -4,7 +4,7 @@ using classes.BufferUtil.* from propath.
 
 class classes.BufferUtil.FormulaInterpreter:
     def public property formula as char no-undo get. protected set.
-    def public property escapeChar as char no-undo init '~~' get.
+    def public property escapeChar as char no-undo init '\' get.
     def public property operationCount as int no-undo get. set.
     
     def temp-table operations
@@ -64,6 +64,7 @@ class classes.BufferUtil.FormulaInterpreter:
         def var newExpression as char no-undo.
         def var expressionLen as int no-undo.
         def var isResetChar as log no-undo.
+        def var isLastChar as log no-undo.
         def var i as int no-undo.
                 
         do while Matcher:containsOneOf(pExpression, '",~''):
@@ -77,37 +78,35 @@ class classes.BufferUtil.FormulaInterpreter:
         do i = 1 to expressionLen:
             assign 
                 currentChar = Matcher:charAt(pExpression, i)
-                isResetChar = currentChar = ',' or currentChar = ' ' or currentChar = '(' or currentChar = ')'.
+                isResetChar = Matcher:hasOneOfChars(currentChar, '(), ')
+                isLastChar = i = expressionLen
+                stringAccumulator = stringAccumulator + (if not isResetChar then currentChar else '').
             
-            if isResetChar or i = expressionLen then do:
-                if stringAccumulator = '' then do:
-                    assign newExpression = newExpression + currentChar.
-                    next.    
-                end.
-                
+            if isResetChar or isLastChar then do:
                 if Matcher:isNumeric(stringAccumulator) then do:
-                    addOperation('literal', '', 'literal("' + stringAccumulator + '", number)', "").
+                    addOperation('literal', '"' + stringAccumulator + '",date', '', '').
                     assign newExpression = newExpression + operations.id.
                 end.
                 else if Matcher:isDate(stringAccumulator) then do:
-                    addOperation('literal', '', 'literal("' + stringAccumulator + '", date)', "").
+                    addOperation('literal', '"' + stringAccumulator + '", date', '', '').
                     assign newExpression = newExpression + operations.id.
                 end.
-                else if Matcher:isValidFieldName(stringAccumulator) and Matcher:charAt(pExpression, i + 1) <> '(' then do:
-                    addOperation('field', '', stringAccumulator, '').
+                else if Matcher:isValidFieldName(stringAccumulator) and currentChar <> '(' then do:
+                    addOperation('field', stringAccumulator, '', '').
                     assign newExpression = newExpression + operations.id. 
                 end.
                 else do:
-                    assign newExpression = newExpression + stringAccumulator + currentChar.
+                    assign newExpression = newExpression + stringAccumulator.    
                 end.
                 
                 assign 
-                    newExpression = newExpression + (if isResetChar then currentChar else '').
+                    newExpression = newExpression + (if not isLastChar then currentChar else '')
                     stringAccumulator = ''.
             end.
-            assign stringAccumulator = stringAccumulator + currentChar.
         end.
-        assign newExpression = Sanitizer:wipeSpaces(newExpression).
+        for each operations:
+            disp operations.operands format 'x(60)' with scrollable.
+        end.
         return newExpression.
     end method.
     
