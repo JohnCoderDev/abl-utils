@@ -83,6 +83,44 @@ class classes.BufferUtil.Table:
         return this-object.
     end method.
     
+    method public Table addFrom(pBuffer as char):
+        return addFrom(pBuffer, ?).
+    end method.
+    
+    method public Table addFrom(pBuffer as char, pExcept as char):
+        return addFrom(new Buffer(pBuffer), pExcept).
+    end method.
+    
+    method public Table addFrom(pTable as Table):
+        return addFrom(pTable, ?).
+    end method.
+    
+    method public Table addFrom(pTable as Table, pExcept as char):
+        return addFrom(pTable:handle, pExcept).
+    end method.
+    
+    method public Table addFrom(pBuffer as Buffer):
+        return addFrom(pBuffer, ?).
+    end method.
+    
+    method public Table addFrom(pBuffer as Buffer, pExcept as char):
+        return addFrom(pBuffer:handle, pExcept).
+    end method.
+    
+    method public Table addFrom(pBuffer as handle):
+        return addFrom(pBuffer, ?).
+    end method.
+    
+    method public Table addFrom(pBuffer as handle, pExcept as char):
+        if pExcept = ? or pExcept = '' then do:
+            handle:add-fields-from(pBuffer).
+        end.
+        else do:
+            handle:add-fields-from(pBuffer, pExcept).
+        end.
+        return this-object.
+    end method.
+    
     method public Table createTable(pName as char):
         reset().
         createTempTable(pName).
@@ -183,13 +221,27 @@ class classes.BufferUtil.Table:
         return this-object.
     end method.
     
+    method public Table fieldCopy(pBuffer as handle, pField as char, pStrategy as char):
+        buffer:fieldCopy(pBuffer, pField, pStrategy).
+        return this-object.
+    end method.
+    
     method public Table fieldCopy(pBuffer as buffer, pField as char):
         buffer:fieldCopy(pBuffer, pField).
         return this-object.
     end method.
     
+    method public Table fieldCopy(pBuffer as buffer, pField as char, pStrategy as char):
+        buffer:fieldCopy(pBuffer, pField, pStrategy).
+        return this-object.
+    end method.
+    
     method public Table fieldCopy(pTable as table, pField as char):
         return fieldCopy(pTable:buffer, pField).
+    end method.
+    
+    method public Table fieldCopy(pTable as Table, pField as char, pStrategy as char):
+        return fieldCopy(pTable:buffer, pField, pStrategy).
     end method.
     
     method public Table bufferCopy(pBuffer as handle):
@@ -202,6 +254,12 @@ class classes.BufferUtil.Table:
         return this-object.
     end method.
     
+    method public Table bufferCopy(pBuffer as handle, pNew as log, pStrategy as char):
+        if not bufferAvailable() or pNew then createBuffer().
+        buffer:copy(pBuffer, pStrategy).
+        return this-object.
+    end method.
+    
     method public Table bufferCopy(pBuffer as Buffer):
         return bufferCopy(pBuffer, false).
     end method.
@@ -210,6 +268,24 @@ class classes.BufferUtil.Table:
         if not bufferAvailable() or pNew then createBuffer().
         buffer:copy(pBuffer).
         return this-object.
+    end method.
+    
+    method public Table bufferCopy(pBuffer as Buffer, pNew as log, pStrategy as char):
+        if not bufferAvailable() or pNew then createBuffer().
+        buffer:copy(pBuffer, pStrategy).
+        return this-object.
+    end method.
+    
+    method public Table bufferCopy(pTable as Table):
+        return bufferCopy(pTable:buffer, false).
+    end method.
+    
+    method public Table bufferCopy(pTable as Table, pNew as log):
+        return bufferCopy(pTable:buffer, pNew).
+    end method.
+    
+    method public Table bufferCopy(pTable as Table, pNew as log, pStrategy as char):
+        return bufferCopy(pTable:buffer, pNew, pStrategy).
     end method.
     
     method public Table addFormula(pField as char, pFormula as char):
