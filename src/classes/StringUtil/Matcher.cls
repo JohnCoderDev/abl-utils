@@ -155,7 +155,36 @@ class classes.StringUtil.Matcher:
     end method.
     
     method public static log isValidFieldName(pSource as char):
-        return Sanitizer:kebabCase(pSource) = pSource.
+        def var calculatedName as char no-undo.
+        assign calculatedName = Sanitizer:kebabCase(pSource).
+        return (calculatedName = pSource and calculatedName <> '' and length(calculatedName) <= 32) .
+    end method.
+    
+    method public static int countOf(pSource as char, pChar as char):
+        def var i as int no-undo.
+        def var c as int no-undo.
+        
+        do i = 1 to length(pSource):
+            if equal(charAt(pSource, i), pChar) then do:
+                assign c = c + 1.
+            end.
+        end.
+        return c.
+    end method.
+    
+    method public static int positionOf(pSource as char, pChar as char):
+        return positionOf(pSource, pChar, 1).
+    end method.
+    
+    method public static int positionOf(pSource as char, pChar as char, pIgnore as int):
+        if pIgnore < 1 then pIgnore = 1.
+        def var i as int no-undo.
+        def var p as int no-undo.
+        do i = 1 to pIgnore:
+            assign p = index(pSource, pChar, p + 1).
+            if p = 0 then return p.
+        end.
+        return p.
     end method.
     
     method public static log isNumeric(pSource as char):
@@ -170,6 +199,28 @@ class classes.StringUtil.Matcher:
             catch errorObject as Error:
                 return false.
             end catch.
+        end.
+    end method.
+    
+    method public static log isInteger(pSource as char):
+        do on error undo, throw:
+            if not isNumeric(pSource) then return false.
+            return int(pSource) = dec(pSource).
+            
+            catch errorObject as Error:
+                return false.
+            end catch.
+        end.    
+    end method.
+    
+    method public static log isInt64(pSource as char):
+        do on error undo, throw:
+            if not isNumeric(pSource) then return false.
+            return int64(pSource) = dec(pSource).
+            
+            catch errorObject as Error:
+                return false.
+            end catch.    
         end.
     end method.
     
