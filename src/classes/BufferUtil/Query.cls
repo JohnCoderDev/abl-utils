@@ -39,6 +39,18 @@ class classes.BufferUtil.Query:
         parseQuery(pQuery).
     end constructor.
     
+    constructor Query(pTable as Table):
+        create query handle.
+        parseQuery(pTable:name).
+        setBuffer(pTable:buffer).
+    end constructor.
+    
+    constructor Query(pBuffer as Buffer):
+        create query handle.
+        parseQuery(pBuffer:name).
+        setBuffer(pBuffer).
+    end constructor.
+    
     method public Query parseQuery(pQuery as char):
         assign pQuery = Sanitizer:wipeSpaces(pQuery).
         def var i as int no-undo.
@@ -194,6 +206,13 @@ class classes.BufferUtil.Query:
         return ''.
     end method.
     
+    method public Buffer getBuffer():
+        find first buffers no-error.
+        if avail buffers then do:
+            return cast(buffers.buffer, Buffer).
+        end.
+    end method.
+    
     method public Buffer getBuffer(pBuffer as char):
         if findBuffer(pBuffer) then do:
             return cast(buffers.buffer, Buffer).
@@ -203,14 +222,14 @@ class classes.BufferUtil.Query:
     method public Query prepare():
         if opened then return this-object.        
         for each buffers:
-            if buffers.buffer = ? then assign buffers.buffer = new Buffer(buffers.name).
+            if buffers.buffer = ? then buffers.buffer = new Buffer(buffers.name).
             handle:add-buffer(cast(buffers.buffer, Buffer):handle).
         end.
+        
         handle:query-prepare(queryString()).
         handle:query-open.
         return this-object.
     end method.
-    
     
     method public JsonObject toJson():
         return toJson('separate').
@@ -283,12 +302,15 @@ class classes.BufferUtil.Query:
     end method.
     
     method public JsonArray toJsonArray(pStrategy as char, pPrefix as log):
+        prepare().
         def var queryClone as Query no-undo.
         def var resultArray as JsonArray no-undo.
+        
         assign 
             queryClone = cast(clone(), Query)
             resultArray = new JsonArray().
-        
+            
+            
         queryClone:first().
         
         do while not queryClone:offEnd():
@@ -314,6 +336,7 @@ class classes.BufferUtil.Query:
     end method.
     
     method public Table toTable(pStrategy as char):
+        prepare().
         def var queryClone as Query no-undo.
         def var resultTable as Table no-undo.
         
@@ -333,8 +356,8 @@ class classes.BufferUtil.Query:
         def var originalName as char no-undo.
         def var nameRelations as char no-undo.
         
+        assign names = queryClone:firstFieldName().
         repeat:
-            names = queryClone:nextFieldName().
             if names = '' then leave.
             assign 
                 nameRelations = nameRelations + names + ';'
@@ -349,6 +372,7 @@ class classes.BufferUtil.Query:
             else do:
                 resultTable:addField(fieldName, fieldHandle:data-type).
             end.
+            names = queryClone:nextFieldName().
         end.
         
         assign nameRelations = substring(nameRelations, 1, length(nameRelations) - 1).

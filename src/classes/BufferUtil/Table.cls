@@ -1,4 +1,5 @@
 block-level on error undo, throw.
+using Progress.Lang.* from propath.
 using Progress.Json.ObjectModel.* from propath.
 using classes.BufferUtil.* from propath.
 using classes.StringUtil.* from propath.
@@ -22,7 +23,7 @@ class classes.BufferUtil.Table:
         
     def temp-table formulas
         field fieldTarget as char
-        field formula as char
+        field formula as object
         index idxField as primary unique fieldTarget.
         
     constructor Table():
@@ -42,6 +43,10 @@ class classes.BufferUtil.Table:
     constructor Table(pLike as char):
         createLike(pLike).
     end constructor.
+    
+    method public Table addLike(pTable as Table, pName as char):
+        return addLike(pTable:buffer, pName).
+    end method.
     
     method public Table addLike(pExpression as char, pName as char):
         return addLike(new Buffer(pExpression), pName).
@@ -80,6 +85,41 @@ class classes.BufferUtil.Table:
     
     method public Table addField(pName as char, pType as char, pExtent as int, pInitial as char, pLabel as char):
         handle:add-new-field(Sanitizer:kebabCase(pName), pType, pExtent, ?, pInitial, pLabel, pLabel).
+        return this-object.
+    end method.
+    
+    method public Table addIndexField(pIndexName as char, pField as char):
+        return addIndexField(pIndexName, pField).
+    end method.
+    
+    method public Table addIndexField(pIndexName as char, pField as char, pAscending as log):
+        def var i as int no-undo.
+        def var currentField as char no-undo.
+        def var mode as char no-undo.
+        assign mode = if pAscending then 'asc' else 'desc'.
+        
+        do i = 1 to num-entries(pField, ' '):
+            assign currentField = entry(i, pField, ' ').
+            handle:add-index-field(pIndexName, currentField, mode).
+        end.
+        
+        return this-object.
+    end method.
+    
+    method public Table addIndex(pIndexName as char):
+        return addIndex(pIndexName, false).
+    end method.
+    
+    method public Table addIndex(pIndexName as char, pUnique as log):
+        return addIndex(pIndexName, pUnique, false).
+    end method.
+    
+    method public Table addIndex(pIndexName as char, pUnique as log, pPrimary as log):
+        return addIndex(pIndexName, pUnique, pPrimary, false).
+    end method.
+    
+    method public Table addIndex(pIndexName as char, pUnique as log, pPrimary as log, pWord as log):
+        handle:add-new-index(pIndexName, pUnique, pPrimary, pWord).
         return this-object.
     end method.
     
@@ -159,6 +199,23 @@ class classes.BufferUtil.Table:
     method protected void createTempTable(pName as char):
         create temp-table handle.
         assign name = pName.
+    end method.
+    
+    method public Table copyData(pSource as Table):
+        def var queryObject as Query no-undo.
+        def var queryBuffer as Buffer no-undo.
+        
+        assign queryObject = new Query(pSource).
+        
+        queryObject:first().
+        do while not queryObject:offEnd():
+            this-object:createBuffer().
+            bufferCopy(queryBuffer).
+            queryObject:next().
+        end.
+        
+        delete object queryObject no-error.
+        return this-object.
     end method.
     
     method public Table copy(pTable as handle):
@@ -295,7 +352,7 @@ class classes.BufferUtil.Table:
         
         assign
             formulas.fieldTarget = pField
-            formulas.formula = pFormula.
+            formulas.formula = new FormulaInterpreter(pFormula).
             
         return this-object.    
     end method.
@@ -305,6 +362,16 @@ class classes.BufferUtil.Table:
             where formulas.fieldTarget = pField
             no-error.
         return avail formulas.    
+    end method.
+    
+    method public Table calculateFormulas():
+        def var formula as FormulaInterpreter no-undo.
+        for each formulas:
+            if not this-object:buffer:has(formulas.fieldTarget) then next.
+            assign formula = cast(formulas.formula, FormulaInterpreter).
+            formula:applyFormula(this-object:buffer, formulas.fieldTarget).
+        end.
+        return this-object.
     end method.
     
     method protected void reset():
