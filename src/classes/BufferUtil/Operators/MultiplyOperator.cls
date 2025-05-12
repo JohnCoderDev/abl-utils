@@ -8,7 +8,7 @@ class classes.BufferUtil.Operators.MultiplyOperator inherits BufferOperator:
         def var i as int no-undo.
         assign operationResult = getArgument(pOperands, 1).
         do i = 2 to argumentCount(pOperands):
-            assign operationResult = string(dec(operationResult) + dec(getArgument(pOperands, i))).
+            assign operationResult = string(dec(operationResult) * dec(getArgument(pOperands, i))).
         end.
         return operationResult.
     end method.

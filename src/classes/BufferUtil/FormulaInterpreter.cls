@@ -48,6 +48,15 @@ class classes.BufferUtil.FormulaInterpreter:
         field middle as log
         index idxPrecedence precedence.
     
+    def temp-table precedences
+        field precedence as int 
+        index idxPrecedence precedence ascending.
+    
+    def temp-table operatorPosition
+        field position as int
+        field symbol as char
+        field length as int.
+    
     constructor FormulaInterpreter():
         assignDefaultOperators().
     end constructor.
@@ -91,7 +100,7 @@ class classes.BufferUtil.FormulaInterpreter:
         for each operations,
         first operators 
             where 
-                operators.operatorClass = operations.operatorClass
+                operators.operatorClass = operations.operatorClass              
                 and operators.symbol <> 'literal':
             
             assign 
@@ -145,6 +154,7 @@ class classes.BufferUtil.FormulaInterpreter:
             expression = Sanitizer:wipeSpaces(expression)
             expression = parseLiterals(expression).
         
+        
         do while expression <> '&R':
             assign 
                 subExpression = Extractor:extract(expression, "(", ")")
@@ -157,7 +167,7 @@ class classes.BufferUtil.FormulaInterpreter:
                 assign
                     previousExpression = entry(i, subExpression)
                     resultExpression = parseExpression(previousExpression)
-                    newSubExpression = replace(newSubExpression, previousExpression, resultExpression).
+                    newSubExpression = replace(newSubExpression, previousExpression, resultExpression).    
             end.
             
             if not isLastExpression then do:
@@ -211,22 +221,54 @@ class classes.BufferUtil.FormulaInterpreter:
         def var operatorStart as int no-undo.
         def var operatorEnd as int no-undo.
         def var operationPhrase as char no-undo.
+        def var symbol as char no-undo.
         
-        for each operators where operators.middle:
-            do while Matcher:contains(pExpression, operators.symbol):
+        for each precedences:
+            assign operatorStart = findNextOperatorIndex(pExpression).
+            
+            do while operatorStart <> 0:
                 assign
-                    operatorStart = index(pExpression, operators.symbol)
-                    operatorEnd = operatorStart + length(operators.symbol)
+                    operatorEnd = operatorStart + operatorPosition.length
                     lhs = extractToken(pExpression, operatorStart - 1, -1)
                     rhs = extractToken(pExpression, operatorEnd, 1)
                     operationPhrase = Splitter:textBetween(pExpression, operatorStart - length(lhs) - 1, operatorEnd + length(rhs)).
-                    
-                addOperation(operators.symbol, lhs + argumentSeparator + rhs).
+                
+                addOperation(operatorPosition.symbol, lhs + argumentSeparator + rhs).
+                
                 assign
-                    pExpression = replace(pExpression, operationPhrase, operations.id).
+                    pExpression = replace(pExpression, operationPhrase, operations.id)
+                    operatorStart = findNextOperatorIndex(pExpression).    
             end.
         end.
+        
         return pExpression.
+    end method.
+    
+    method protected int findNextOperatorIndex(pExpression as char):
+        def var i as int no-undo.
+        def var p as int no-undo.
+        
+        empty temp-table operatorPosition.
+        
+        for each operators 
+            where 
+                operators.precedence = precedences.precedence
+                and operators.middle:
+            
+            assign i = index(pExpression, operators.symbol).
+            
+            if (i > 0 and i < p) or p = 0 then do:
+                empty temp-table operatorPosition.
+                create operatorPosition.
+                assign
+                    operatorPosition.symbol = operators.symbol
+                    operatorPosition.position = i
+                    operatorPosition.length = length(operatorPosition.symbol)
+                    p = i.
+            end.
+        end.
+        
+        return p.
     end method.
     
     method protected char extractToken(pExpression as char, pStart as int, pIncrement as int):
@@ -246,9 +288,9 @@ class classes.BufferUtil.FormulaInterpreter:
                 currentChar = Matcher:charAt(pExpression, currentPosition).
         end.
         
-        if currentChar = '' then return ''.
+        if asc(currentChar) = -1 then return ''.
         
-        do while not Matcher:hasOneOfChars(currentChar, tokenDelimiters) and currentChar <> '':
+        do while not Matcher:hasOneOfChars(currentChar, tokenDelimiters) and asc(currentChar) <> -1:
             if pIncrement < 0 then do:
                 assign token = currentChar + token.
             end.
@@ -495,11 +537,20 @@ class classes.BufferUtil.FormulaInterpreter:
         if not findOperator(pSymbol) then do:
             create operators.
         end.
+        addPrecedence(pPrecedence).
         assign
             operators.symbol = pSymbol
             operators.precedence = pPrecedence
             operators.operatorClass = pClass
             operators.middle = pMiddle.
         return this-object.    
+    end method. 
+    
+    method protected void addPrecedence(pPrecedence as int):
+        find precedences where precedences.precedence = pPrecedence no-error.
+        if not avail precedences then do:
+            create precedences.
+            assign precedences.precedence = pPrecedence.
+        end.
     end method.
 end class.
