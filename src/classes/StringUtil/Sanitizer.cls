@@ -19,6 +19,10 @@ class classes.StringUtil.Sanitizer:
         return filterChars(pSource, Alphabet:special, true).
     end method.
     
+    method public static char removeNonPrintable(pSource as char):
+        return filterChars(pSource, Alphabet:nonPrintable, true).
+    end method.
+    
     method public static char removeSpaces(pSource as char):
         return filterChars(pSource, Alphabet:blankchars, true).
     end method.
@@ -105,7 +109,8 @@ class classes.StringUtil.Sanitizer:
             cased = normalAlphaNum(pSource)
             cased = shiftLeftNumbers(pSource)
             cased = capitalize(cased)
-            cased = removeSpaces(cased).
+            cased = removeSpaces(cased)
+            cased = removeNonPrintable(cased).
         return cased.    
     end method.
     
@@ -125,6 +130,7 @@ class classes.StringUtil.Sanitizer:
             cased = wipeSpaces(cased)
             cased = shiftLeftNumbers(cased)
             cased = shiftLeft(cased, '-_')
+            cased = removeNonPrintable(cased)
             cased = lower(cased)
             cased = replaceChars(cased, ' ', '-').
         return cased.    

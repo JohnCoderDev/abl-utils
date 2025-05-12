@@ -15,6 +15,15 @@ class classes.StringUtil.Alphabet:
     def public static property tab as char init '~t' no-undo get. protected set.
     def public static property newline as char init '~n' no-undo get. protected set.
     def public static property wild as char init '*?' no-undo get. protected set.
+    def public static property nonPrintable as char no-undo
+        get:
+            def var accumulator as char no-undo.
+            def var i as int no-undo.
+            do i = 1 to 31:
+                assign accumulator = accumulator + chr(i).
+            end.
+            return accumulator.
+        end.
     
     def public static property accentAlpha as char no-undo get. protected set.
     def public static property accentAlphanum as char no-undo get. protected set.

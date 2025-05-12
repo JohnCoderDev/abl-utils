@@ -1,6 +1,7 @@
 block-level on error undo, throw.
 using Progress.Lang.* from propath.
 using classes.StringUtil.* from propath.
+using classes.DateUtil.* from propath.
 
 class classes.StringUtil.Matcher:
     def public static property sensitivity as char no-undo get. private set.
@@ -185,55 +186,5 @@ class classes.StringUtil.Matcher:
             if p = 0 then return p.
         end.
         return p.
-    end method.
-    
-    method public static log isNumeric(pSource as char):
-        do on error undo, throw:
-            assign pSource = Sanitizer:wipeSpaces(pSource).
-            if pSource = '' or pSource = '+' or pSource = '-' or contains(pSource, '*') then do:
-                return false.
-            end.
-            dec(pSource).
-            return true.
-            
-            catch errorObject as Error:
-                return false.
-            end catch.
-        end.
-    end method.
-    
-    method public static log isInteger(pSource as char):
-        do on error undo, throw:
-            if not isNumeric(pSource) then return false.
-            return int(pSource) = dec(pSource).
-            
-            catch errorObject as Error:
-                return false.
-            end catch.
-        end.    
-    end method.
-    
-    method public static log isInt64(pSource as char):
-        do on error undo, throw:
-            if not isNumeric(pSource) then return false.
-            return int64(pSource) = dec(pSource).
-            
-            catch errorObject as Error:
-                return false.
-            end catch.    
-        end.
-    end method.
-    
-    method public static log isDate(pSource as char):
-        do on error undo, throw:
-            def var d as date no-undo.
-            assign pSource = Sanitizer:wipeSpaces(pSource).
-            assign d = date(pSource).
-            return d <> ?.
-            
-            catch errorObject as Error:
-                return false.
-            end catch.
-        end.
     end method.
 end class.

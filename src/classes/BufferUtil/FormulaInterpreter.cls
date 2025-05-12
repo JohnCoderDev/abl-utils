@@ -4,21 +4,41 @@ using classes.StringUtil.* from propath.
 using classes.ClassUtil.* from propath.
 using classes.BufferUtil.* from propath.
 using classes.BufferUtil.Errors.* from propath.
-using classes.BufferUtil.Operators.* from propath.
+using classes.BufferUtil.Operators.Interfaces.* from propath.
 
 class classes.BufferUtil.FormulaInterpreter:
     def public property formula as char no-undo get. protected set.
-    def public property tokenDelimiters as char no-undo init ' (),' get. protected set.
-    def public property escapeChar as char no-undo init '\' get. set.
+    def public property escapeChar as char no-undo init '\' get. protected set.
+    def public static property sEscapeChar as char no-undo 
+        get:
+            return new FormulaInterpreter():escapeChar.
+        end.
+        
+    def public property argumentSeparator as char no-undo 
+        get:
+            return chr(29).
+        end.
+        
+    def public static property sArgumentSeparator as char no-undo
+        get:
+            return new FormulaInterpreter():argumentSeparator.
+        end.
+        
+    def public property tokenDelimiters as char no-undo 
+        get:
+            return ' (),' + argumentSeparator.
+        end.    
     def public property operationCount as int no-undo get. protected set.
-    def public property idIndicator as char init '&' no-undo get.
-    
+    def public property idIndicator as char no-undo 
+        get:
+            return chr(31).
+        end.
+        
     def temp-table operations
         field id as char format 'x(4)'
         field operands as char format 'x(60)'
-        field operationResult as char 
-        field operatorClass as char format 'x(60)'
-        index idxPrecedence operatorClass.
+        field operationResult as char format 'x(60)'
+        field operatorClass as char format 'x(60)'.
     
     def temp-table operators
         field precedence as int
@@ -26,7 +46,7 @@ class classes.BufferUtil.FormulaInterpreter:
         field operatorClass as char
         field operatorObject as object
         field middle as log
-        index idxPrecedence precedence operatorClass.
+        index idxPrecedence precedence.
     
     constructor FormulaInterpreter():
         assignDefaultOperators().
@@ -41,8 +61,9 @@ class classes.BufferUtil.FormulaInterpreter:
         for each operations no-lock:
             disp
                 operations.id
-                operations.operands
                 operations.operatorClass
+                operations.operands
+                operations.operationResult
                 with scrollable.    
         end.
         return this-object.
@@ -63,25 +84,25 @@ class classes.BufferUtil.FormulaInterpreter:
     end method.
     
     method public void applyFormula(pBuffer as Buffer, pTarget as char):
-        def var bufferOperator as IBufferOperator no-undo.
+        def var bufferOperator as BufferOperator no-undo.
         def var evaluationResult as char no-undo.
         def var actualArguments as char no-undo.
         
         for each operations,
         first operators 
-        where 
-            operators.operatorClass = operations.operatorClass
-            and operators.symbol <> 'literal':
+            where 
+                operators.operatorClass = operations.operatorClass
+                and operators.symbol <> 'literal':
             
             assign 
-                bufferOperator = cast(operators.operatorObject, IBufferOperator)
+                bufferOperator = cast(operators.operatorObject, BufferOperator)
                 actualArguments = replaceArguments(operations.operands)
                 evaluationResult = bufferOperator:evaluate(pBuffer, actualArguments)
                 operations.operationResult = evaluationResult.
         end.
         
         for last operations:
-            pBuffer:updateField(pTarget, operations.operationResult).
+            pBuffer:updateField(pTarget, Wrapper:unwrap(operations.operationResult)).
         end.
     end method.
     
@@ -89,14 +110,15 @@ class classes.BufferUtil.FormulaInterpreter:
         def var actualArguments as char no-undo.
         def var currentArgument as char no-undo.
         def var i as int no-undo.
+        def buffer bOperations for operations.
         
         assign actualArguments = pCurrentArguments.
         
-        do i = 1 to num-entries(pCurrentArguments):
-            assign currentArgument = entry(i, pCurrentArguments).
+        do i = 1 to num-entries(pCurrentArguments, argumentSeparator):
+            assign currentArgument = entry(i, pCurrentArguments, argumentSeparator).    
             if Matcher:charAt(currentArgument, 1) = idIndicator then do:
-                find first operations where operations.id = currentArgument.
-                actualArguments = replace(actualArguments, currentArgument, operations.operationResult).
+                find first bOperations where id = currentArgument.
+                actualArguments = replace(actualArguments, currentArgument, bOperations.operationResult).
             end.
         end.
         
@@ -142,7 +164,12 @@ class classes.BufferUtil.FormulaInterpreter:
                 assign functionName = extractToken(expression, subExpressionPosition - 1, - 1).
                 
                 if functionName <> '' then do:
-                    addOperation(functionName, Sanitizer:removeSpaces(newSubExpression)).
+                    addOperation(
+                        functionName, 
+                        Sanitizer:removeSpaces(
+                            replace(newSubExpression, ',', argumentSeparator)
+                        )
+                    ).
                 end.
                 
                 assign expression = replace(expression, functionName + "(" + subExpression + ")", operations.id).
@@ -152,10 +179,8 @@ class classes.BufferUtil.FormulaInterpreter:
             end.
         end.
         
-        
-        
-        //createOperators().
-        //evaluateLiterals().
+        createOperators().
+        evaluateLiterals().
         return this-object.
     end method.
     
@@ -166,10 +191,10 @@ class classes.BufferUtil.FormulaInterpreter:
     end method.
     
     method protected void evaluateLiterals():
-        def var bufferOperator as IBufferOperator.
+        def var bufferOperator as BufferOperator.
         def var evaluationResult as char no-undo.
         for first operators where operators.symbol = 'literal':
-            assign bufferOperator = cast(operators.operatorObject, IBufferOperator).
+            assign bufferOperator = cast(operators.operatorObject, BufferOperator).
         end.
         
         for first operators where operators.symbol = 'literal',
@@ -196,7 +221,7 @@ class classes.BufferUtil.FormulaInterpreter:
                     rhs = extractToken(pExpression, operatorEnd, 1)
                     operationPhrase = Splitter:textBetween(pExpression, operatorStart - length(lhs) - 1, operatorEnd + length(rhs)).
                     
-                addOperation(operators.symbol, lhs + ',' + rhs).
+                addOperation(operators.symbol, lhs + argumentSeparator + rhs).
                 assign
                     pExpression = replace(pExpression, operationPhrase, operations.id).
             end.
@@ -249,7 +274,7 @@ class classes.BufferUtil.FormulaInterpreter:
                 assign
                     operatorPosition = Matcher:positionOf(pExpression, operators.symbol, i)
                     previousChar = Matcher:charAt(pExpression, operatorPosition - 1)
-                    nextChar = Matcher:charAt(pExpression, operatorPosition + 1).
+                    nextChar = Matcher:charAt(pExpression, operatorPosition + length(operators.symbol)).
                 
                 if asc(previousChar) = -1 then do:
                     assign 
@@ -267,23 +292,21 @@ class classes.BufferUtil.FormulaInterpreter:
                         nextChar = Matcher:charAt(pExpression, operatorPosition + 1).
                 end.
                 
-                if operators.symbol <> '-' then do:
+                if operators.symbol <> '-' and length(operators.symbol) = 1 then do:
                     assign pExpression = Splitter:textBefore(pExpression, operatorPosition) + ' ' 
                         + operators.symbol + ' ' + Splitter:textAfter(pExpression, operatorPosition).
                 end.
-                
-                if (
-                    operators.symbol = '-'
-                    and (
-                        Matcher:hasOneOfChars(previousChar, tokenDelimiters)
-                        or Matcher:hasOneOfChars(nextChar, tokenDelimiters)
-                        or Matcher:isNumeric(nextChar)
-                    )
-                ) then do:
-                    message pExpression skip operatorPosition view-as alert-box.
+                else if operators.symbol <> '-' and asc(nextChar) = 32 and asc(previousChar) = 32 then do:
                     assign pExpression = Splitter:textBefore(pExpression, operatorPosition) + ' ' 
                         + operators.symbol + ' ' + Splitter:textAfter(pExpression, operatorPosition).
-                    message pExpression view-as alert-box.    
+                end.
+                else if (
+                    operators.symbol = '-'
+                    and Matcher:hasOneOfChars(previousChar, tokenDelimiters)
+                    and Matcher:hasOneOfChars(nextChar, tokenDelimiters)
+                ) then do:
+                    assign pExpression = Splitter:textBefore(pExpression, operatorPosition) + ' ' 
+                        + operators.symbol + ' ' + Splitter:textAfter(pExpression, operatorPosition).
                 end.
             end.
         end.
@@ -300,6 +323,7 @@ class classes.BufferUtil.FormulaInterpreter:
         def var expressionLen as int no-undo.
         def var isTokenDelimiter as log no-undo.
         def var isLastChar as log no-undo.
+        def var guessedType as char no-undo.
         def var i as int no-undo.
                 
         do while Matcher:containsOneOf(pExpression, '",~''):
@@ -318,20 +342,16 @@ class classes.BufferUtil.FormulaInterpreter:
                 stringAccumulator = stringAccumulator + (if not isTokenDelimiter then currentChar else '').
             
             if isTokenDelimiter or isLastChar then do:
-                if Matcher:isInteger(stringAccumulator) then do:
-                    addOperation('literal', quoter(stringAccumulator, '"') + ',integer').
+                if TypeInterpreter:isNumeric(stringAccumulator) then do:
+                    addOperation('literal', quoter(stringAccumulator, '"') + argumentSeparator + 'number').
                     assign newExpression = newExpression + operations.id.
                 end.
-                else if Matcher:isInt64(stringAccumulator) then do:
-                    addOperation('literal', quoter(stringAccumulator, '"') + ',int64').
+                else if TypeInterpreter:isDatetime(stringAccumulator) then do:
+                    addOperation('literal', quoter(stringAccumulator, '"') + argumentSeparator + 'datetime').
                     assign newExpression = newExpression + operations.id.
                 end.
-                else if Matcher:isNumeric(stringAccumulator) then do:
-                    addOperation('literal', quoter(stringAccumulator, '"') + ',decimal').
-                    assign newExpression = newExpression + operations.id.
-                end.
-                else if Matcher:isDate(stringAccumulator) then do:
-                    addOperation('literal', quoter(stringAccumulator, '"') + ',date').
+                else if TypeInterpreter:isDate(stringAccumulator) then do:
+                    addOperation('literal', quoter(stringAccumulator, '"') + argumentSeparator + 'date').
                     assign newExpression = newExpression + operations.id.
                 end.
                 else if (
@@ -344,13 +364,13 @@ class classes.BufferUtil.FormulaInterpreter:
                 end.
                 else do:
                     assign newExpression = newExpression + stringAccumulator.    
-                end.
-                
+                end. 
                 assign 
                     newExpression = newExpression + (if isLastChar and isTokenDelimiter or not isLastChar then currentChar else '')
                     stringAccumulator = ''.
             end.
         end.
+        
         return newExpression.
     end method.
     
@@ -367,14 +387,23 @@ class classes.BufferUtil.FormulaInterpreter:
         def var strStart as int no-undo.
         def var strEnd as int no-undo.
         def var substringExpression as char no-undo.
+        def var realSubstringExpression as char no-undo.
         
         assign strStart = findNextNonEscapedMatch(pExpression, pQuote).
         if strStart > 0 then do:
             assign 
                 strEnd = findNextNonEscapedMatch(Splitter:textAfter(pExpression, strStart), pQuote)
-                substringExpression = Splitter:textBetween(pExpression, strStart, strStart + strEnd).     
-            addOperation('literal', substringExpression + ',character').
-            pExpression = replace(pExpression, substringExpression, operations.id).
+                substringExpression = Splitter:textBetween(pExpression, strStart, strStart + strEnd)
+                realSubstringExpression = substringExpression.
+            
+            if Wrapper:wrapped(substringExpression, "'") then do:
+                assign
+                    substringExpression = Wrapper:unwrap(substringExpression, "'")
+                    substringExpression = Wrapper:wrap(substringExpression, '"').
+            end.
+            
+            addOperation('literal', substringExpression + argumentSeparator + 'character').
+            pExpression = replace(pExpression, realSubstringExpression, operations.id).
         end.
         return pExpression.
     end method.
