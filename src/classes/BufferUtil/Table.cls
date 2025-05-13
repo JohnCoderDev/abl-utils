@@ -89,7 +89,7 @@ class classes.BufferUtil.Table:
     end method.
     
     method public Table addIndexField(pIndexName as char, pField as char):
-        return addIndexField(pIndexName, pField).
+        return addIndexField(pIndexName, pField, true).
     end method.
     
     method public Table addIndexField(pIndexName as char, pField as char, pAscending as log):
@@ -205,7 +205,9 @@ class classes.BufferUtil.Table:
         def var queryObject as Query no-undo.
         def var queryBuffer as Buffer no-undo.
         
-        assign queryObject = new Query(pSource).
+        assign 
+            queryObject = new Query(pSource)
+            queryBuffer = queryObject:getBuffer().
         
         queryObject:first().
         do while not queryObject:offEnd():

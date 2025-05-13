@@ -1,7 +1,16 @@
 using classes.BufferUtil.* from propath.
 
 class classes.BufferUtil.Aggregators.Interfaces.Aggregator abstract:
-    method public abstract char createFields(pTable as Table, pName as char, pType as char).
+    method public char getSupportFieldName(pSupports as char, pPosition as int):
+        return entry(2, entry(pPosition, pSupports, ' ')).
+    end method.
+    
+    method public abstract char createFields(
+        pTargetTable as Table, 
+        pTargetName as char, 
+        pSourceBuffer as Buffer,
+        pSourceName as char
+    ).
     method public abstract void updateField(
         pBufferSource as Buffer, 
         pFieldSource as char, 

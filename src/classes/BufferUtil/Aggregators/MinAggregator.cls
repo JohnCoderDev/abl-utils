@@ -3,7 +3,13 @@ using classes.BufferUtil.* from propath.
 using classes.BufferUtil.Aggregators.Interfaces.* from propath.
 
 class classes.BufferUtil.Aggregators.MinAggregator inherits Aggregator:
-    method public override char createFields(pTable as Table, pName as char, pType as char):
+    method public override char createFields(
+        pTargetTable as Table, 
+        pTargetName as char, 
+        pSourceBuffer as Buffer,
+        pSourceName as char
+    ):
+        pTargetTable:addField(pTargetName, pSourceBuffer:type(pSourceName), ?, ?).
     end method.
     
     method public override void updateField(
@@ -13,5 +19,19 @@ class classes.BufferUtil.Aggregators.MinAggregator inherits Aggregator:
         pTargetField as char,
         pSupportFields as char
     ):
+        if pTargetBuffer:field(pTargetField):buffer-value = ? then do:
+            pTargetBuffer:updateField(
+                pTargetField,
+                pSourceBuffer:field(pSourceField):buffer-value
+            ).
+        end.
+        else if pSourceBuffer:field(pSourceField):buffer-value <> ? then do:
+            if pSourceBuffer:field(pSourceField):buffer-value < pTargetBuffer:field(pTargetField):buffer-value then do:
+                pTargetBuffer:updateField(
+                    pTargetField,
+                    pSourceBuffer:field(pSourceField):buffer-value
+                ).
+            end.
+        end.
     end method.
 end class.

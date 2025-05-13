@@ -23,7 +23,8 @@ class classes.BufferUtil.Summarizer:
         field fieldName as char
         field fieldSource as char
         field temporary as log
-        field supportFields as char.
+        field supportFields as char
+        index idxTemporary temporary descending.
     
     constructor Summarizer():
         assignDefaultAggregators().
@@ -37,10 +38,10 @@ class classes.BufferUtil.Summarizer:
     
     method public Summarizer assignDefaultAggregators():
         addAggregator('sum', 'classes.BufferUtil.Aggregators.SumAggregator').
-        addAggregator('average', 'classes.BufferUtil.Aggregators.AverageAggregator').
+        addAggregator('count', 'classes.BufferUtil.Aggregators.CountAggregator').        
         addAggregator('min', 'classes.BufferUtil.Aggregators.MinAggregator').
         addAggregator('max', 'classes.BufferUtil.Aggregators.MaxAggregator').
-        addAggregator('count', 'classes.BufferUtil.Aggregators.CountAggregator').
+        addAggregator('average', 'classes.BufferUtil.Aggregators.AverageAggregator').
     end method.
     
     method public Summarizer addAggregator(pName as char, pClass as char):
@@ -60,8 +61,8 @@ class classes.BufferUtil.Summarizer:
         return avail aggregator.
     end method.
     
-    method public Table summarize(pBuffer as char):
-        return summarize(new Buffer(pBuffer)).
+    method public Table summarize(pQuery as char):
+        return summarize(new Query(pQuery)).
     end method.
     
     method public Table summarize(pBuffer as Buffer):
@@ -79,14 +80,12 @@ class classes.BufferUtil.Summarizer:
         def var queryBuffer as Buffer no-undo.
         def var keyFields as char no-undo.
         def var currentAggregator as Aggregator no-undo.
-        message 'here before' view-as alert-box.
+       
         assign 
-            resultTable = prepareSummaryTable(pTable)
+            resultTable = prepareSummaryTable(pTable, pTable:buffer)
             queryObject = new Query(pTable)
             queryBuffer = queryObject:getBuffer()
             keyFields = keyFields().
-            
-        message 'here after' view-as alert-box.    
         
         for each aggregationKeys:
             assign aggregationKeys.fieldType = queryBuffer:type(aggregationKeys.fieldName).
@@ -95,16 +94,15 @@ class classes.BufferUtil.Summarizer:
         resultTable:addIndex('idx-primary', true, true).
         resultTable:addIndexField('idx-primary', keyFields).
         
-        
         resultTable:prepare().        
         queryObject:first().
         
         do while not queryObject:offEnd():
             resultTable:buffer:first(wherePhrase(queryBuffer), exclusive-lock).
             
-            if not resultTable:buffer:available then do:
-                resultTable:createBuffer().
-                resultTable:fieldCopy(queryBuffer, keyFields).
+            if not resultTable:buffer:available then do:     
+                resultTable:buffer:create().
+                resultTable:buffer:fieldCopy(queryBuffer, keyFields).
             end.
             
             for each aggregationValues, 
@@ -119,10 +117,10 @@ class classes.BufferUtil.Summarizer:
                 ).
             end.
             
+            resultTable:buffer:release().
             queryObject:next().
         end.
         
-        assign resultTable = removeTemporaryFields(resultTable).
         return resultTable.
     end method.
     
@@ -143,18 +141,27 @@ class classes.BufferUtil.Summarizer:
     
     method protected char wherePhrase(pBuffer as Buffer):
         def var phrase as char no-undo.
+        def var bufferValue as char no-undo.
+        
         for each aggregationKeys:
-            assign phrase = phrase + aggregationKeys.fieldName + ' = ' 
-                + (if aggregationKeys.fieldType = 'character' 
-                    then quoter(pBuffer:value(aggregationKeys.fieldName))
-                    else pBuffer:value(aggregationKeys.fieldName)
+            if pBuffer:field(aggregationKeys.fieldName):buffer-value = ? then do:
+                assign bufferValue = '?'.
+            end.    
+            else do:
+                assign bufferValue = pBuffer:value(aggregationKeys.fieldName).
+            end.
+            assign phrase = phrase +  aggregationKeys.fieldName + ' = ' 
+                + (
+                    if aggregationKeys.fieldType = 'character' 
+                    then quoter(replace(bufferValue, '"', '~~"'))
+                    else bufferValue
                 ) + ' and '.
         end.
         assign phrase = Splitter:textBetween(phrase, 1, length(phrase) - 5).
         return 'where ' + phrase.
     end method.
     
-    method protected Table prepareSummaryTable(pTable as Table):
+    method protected Table prepareSummaryTable(pTable as Table, pSourceBuffer as Buffer):
         def var resultTable as Table no-undo.
         def var aggregatorObject as Aggregator no-undo.
         def var supportFields as char no-undo.
@@ -165,7 +172,6 @@ class classes.BufferUtil.Summarizer:
             resultTable:addLike(pTable, aggregationKeys.fieldName).
         end.
         
-        
         for each aggregationValues where not aggregationValues.temporary, 
         first aggregator where aggregator.name = aggregationValues.aggregator:
             assign 
@@ -173,8 +179,11 @@ class classes.BufferUtil.Summarizer:
                 supportFields = aggregatorObject:createFields(
                     resultTable, 
                     aggregationValues.fieldName,
-                    pTable:buffer:type(aggregationValues.fieldSource)
-                ).    
+                    pSourceBuffer,
+                    aggregationValues.fieldSource
+                )
+                aggregationValues.supportFields = supportFields.
+            
             addAggregation(supportFields).
         end.
         
@@ -195,7 +204,8 @@ class classes.BufferUtil.Summarizer:
             end.
         end.
         
-        resultTable:prepare():copyData(pTable).
+        resultTable:prepare().
+        resultTable:copyData(pTable).
         return resultTable.
     end method.
     
@@ -273,26 +283,24 @@ class classes.BufferUtil.Summarizer:
     end method.
     
     method public Summarizer addAggregation(
+        pFieldSource as char,
         pFieldName as char,
-        pfieldSource as char,
         pAggregator as char
     ):
-        return addAggregation(pFieldName, pfieldSource, pAggregator, false).
+        return addAggregation(pFieldSource, pFieldName, pAggregator, false).
     end method.
     
     method public Summarizer addAggregation(
+        pFieldSource as char,
         pFieldName as char,
-        pfieldSource as char,
         pAggregator as char,
         pTemporary as log
     ):
         assertAggregatorExist(pAggregator).
-        if not findAggregation(pfieldSource, pAggregator) then do:
-            create aggregationValues.
-        end.
+        create aggregationValues.
         assign 
             aggregationValues.fieldName = pFieldName
-            aggregationValues.fieldSource = pfieldSource
+            aggregationValues.fieldSource = pFieldSource
             aggregationValues.aggregator = pAggregator
             aggregationValues.temporary =  pTemporary.
         return this-object.

@@ -3,8 +3,13 @@ using classes.BufferUtil.* from propath.
 using classes.BufferUtil.Aggregators.Interfaces.* from propath.
 
 class classes.BufferUtil.Aggregators.CountAggregator inherits Aggregator:
-    method public override char createFields(pTable as Table, pName as char, pType as char):
-        pTable:addField(pName, 'int64').
+    method public override char createFields(
+        pTargetTable as Table, 
+        pTargetName as char, 
+        pSourceBuffer as Buffer,
+        pSourceName as char
+    ):
+        pTargetTable:addField(pTargetName, 'int64', ?, '0').
     end method.
     
     method public override void updateField(

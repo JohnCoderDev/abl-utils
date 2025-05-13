@@ -98,6 +98,11 @@ class classes.BufferUtil.Buffer:
         return copy(new Buffer(pBuffer), pStrategy).
     end method.
     
+    method public Buffer release():
+        handle:buffer-release.
+        return this-object.
+    end method.
+    
     method public Buffer first():
         return first('').
     end method.
@@ -112,7 +117,9 @@ class classes.BufferUtil.Buffer:
     
     method public Buffer first(pPredicate as char, pLock as int, pWait as int):
         if not valid-handle(handle) then return this-object.
-        handle:find-first(pPredicate, pLock, pWait) no-error.
+        do transaction:
+            handle:find-first(pPredicate, pLock, pWait) no-error.
+        end.    
         return this-object.
     end method.
     
@@ -126,7 +133,9 @@ class classes.BufferUtil.Buffer:
     
     method public Buffer current(pLock as int, pWait as int):
         if not valid-handle(handle) then return this-object.
-        handle:find-current(pLock, pWait) no-error.
+        do transaction:
+            handle:find-current(pLock, pWait) no-error.
+        end.    
         return this-object.
     end method.
     
@@ -144,7 +153,9 @@ class classes.BufferUtil.Buffer:
     
     method public Buffer last(pWhere as char, pLock as int, pWait as int):
         if not valid-handle(handle) then return this-object.
-        handle:find-last(pWhere, pLock, pWait) no-error.
+        do transaction:
+            handle:find-last(pWhere, pLock, pWait) no-error.
+        end.    
         return this-object.
     end method.
     
