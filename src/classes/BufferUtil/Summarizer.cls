@@ -30,6 +30,11 @@ class classes.BufferUtil.Summarizer:
         assignDefaultAggregators().
     end constructor.
     
+    constructor Summarizer(pAggregations as char):
+        assignDefaultAggregators().
+        addAggregation(pAggregations).
+    end constructor.
+    
     constructor Summarizer(pKeys as char, pAggregations as char):
         assignDefaultAggregators().
         addKey(pKeys).
@@ -43,6 +48,8 @@ class classes.BufferUtil.Summarizer:
         addAggregator('min', 'classes.BufferUtil.Aggregators.MinAggregator').
         addAggregator('max', 'classes.BufferUtil.Aggregators.MaxAggregator').
         addAggregator('average', 'classes.BufferUtil.Aggregators.AverageAggregator').
+        addAggregator('variance', 'classes.BufferUtil.Aggregators.VarianceAggregator').
+        addAggregator('std-deviation', 'classes.BufferUtil.Aggregators.StandardDeviationAggregator').
     end method.
     
     method public Summarizer addAggregator(pName as char, pClass as char):
@@ -92,8 +99,10 @@ class classes.BufferUtil.Summarizer:
             assign aggregationKeys.fieldType = queryBuffer:type(aggregationKeys.fieldName).
         end.
         
-        resultTable:addIndex('idx-primary', true, true).
-        resultTable:addIndexField('idx-primary', keyFields).
+        if keyFields <> '' and keyFields <> ? then do:
+            resultTable:addIndex('idx-primary', true, true).
+            resultTable:addIndexField('idx-primary', keyFields).
+        end.
         
         resultTable:prepare().        
         queryObject:first().
@@ -103,7 +112,9 @@ class classes.BufferUtil.Summarizer:
             
             if not resultTable:buffer:available then do:     
                 resultTable:buffer:create().
-                resultTable:buffer:fieldCopy(queryBuffer, keyFields).
+                if keyFields <> '' and keyFields <> ? then do:
+                    resultTable:buffer:fieldCopy(queryBuffer, keyFields).
+                end.
             end.
             
             for each aggregationValues, 
@@ -165,7 +176,6 @@ class classes.BufferUtil.Summarizer:
     method protected Table prepareSummaryTable(pTable as Table, pSourceBuffer as Buffer):
         def var resultTable as Table no-undo.
         def var aggregatorObject as Aggregator no-undo.
-        def var supportFields as char no-undo.
         
         assign resultTable = new Table().
         
@@ -177,18 +187,34 @@ class classes.BufferUtil.Summarizer:
         first aggregator where aggregator.name = aggregationValues.aggregator:
             assign 
                 aggregatorObject = cast(aggregator.aggregator, Aggregator)
-                supportFields = aggregatorObject:createFields(
+                aggregationValues.supportFields = aggregatorObject:createFields(
                     resultTable, 
                     aggregationValues.fieldName,
                     pSourceBuffer,
                     aggregationValues.fieldSource
-                )
-                aggregationValues.supportFields = supportFields.
+                ).
             
-            addAggregation(supportFields).
+            addAggregation(aggregationValues.supportFields).
         end.
         
+        createTemporaryFields(resultTable, pSourceBuffer).
+        
         return resultTable.
+    end method.
+    
+    method protected void createTemporaryFields(pTable as Table, pSourceBuffer as Buffer):
+        def var aggregatorObject as Aggregator no-undo.
+        
+        for each aggregationValues where aggregationValues.temporary,
+        first aggregator where aggregator.name = aggregationValues.aggregator:
+            aggregatorObject = cast(aggregator.aggregator, Aggregator).
+            aggregationValues.supportFields = aggregatorObject:createFields(
+                pTable, 
+                aggregationValues.fieldName,
+                pSourceBuffer,
+                aggregationValues.fieldSource
+            ).
+        end.
     end method.
     
     method protected Table removeTemporaryFields(pTable as Table):
@@ -298,13 +324,22 @@ class classes.BufferUtil.Summarizer:
         pTemporary as log
     ):
         assertAggregatorExist(pAggregator).
-        create aggregationValues.
+        if not findAggregationField(pFieldName) then do:
+            create aggregationValues.
+        end.
         assign 
             aggregationValues.fieldName = pFieldName
             aggregationValues.fieldSource = pFieldSource
             aggregationValues.aggregator = pAggregator
             aggregationValues.temporary =  pTemporary.
         return this-object.
+    end method.
+    
+    method public log findAggregationField(pFieldName as char):
+        find first aggregationValues
+            where aggregationValues.fieldName = pFieldName
+            no-error.
+        return avail aggregationValues.    
     end method.
     
     method public log findAggregation(pTarget as char, pAggregator as char):

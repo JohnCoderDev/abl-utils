@@ -34,6 +34,11 @@ class classes.BufferUtil.Query:
         field fieldName as char
         field newName as char.
         
+    def temp-table formulas
+        field fieldName as char
+        field fieldType as char
+        field formula as char.
+        
     constructor Query(pQuery as character):
         create query handle.
         parseQuery(pQuery).
@@ -310,7 +315,6 @@ class classes.BufferUtil.Query:
             queryClone = cast(clone(), Query)
             resultArray = new JsonArray().
             
-            
         queryClone:first().
         
         do while not queryClone:offEnd():
@@ -380,8 +384,8 @@ class classes.BufferUtil.Query:
         def var i as int no-undo.
         def var j as int no-undo.
         
+        createFormulaFields(resultTable).
         resultTable:prepare().
-        
         queryClone:first().
         
         do while not queryClone:offEnd():
@@ -405,11 +409,19 @@ class classes.BufferUtil.Query:
                 end.
             end.
             
+            resultTable:calculateFormulas().
             queryClone:next().
         end.
         
         delete object queryClone no-error.
         return resultTable.
+    end method.
+    
+    method protected void createFormulaFields(pTable as Table):
+        for each formulas:
+            pTable:addField(formulas.fieldName, formulas.fieldType).
+            pTable:addFormula(formulas.fieldName, formulas.formula).
+        end.
     end method.
     
     method public char firstFieldName():
@@ -555,6 +567,25 @@ class classes.BufferUtil.Query:
         
         assign resultString = 'for ' + substring(resultString, 1, length(resultString) - 1).
         return resultString.
+    end method.
+    
+    method public Table addFormula(pFieldName as char, pFieldType as char, pFormula as char):
+        create formulas.
+        assign
+            formulas.fieldName = pFieldname
+            formulas.fieldType = pFieldType
+            formulas.formula = pFormula.
+        this-object.    
+    end method.
+    
+    method public Table summarize(pAggregations as char):
+        return summarize('', pAggregations).
+    end method.
+    
+    method public Table summarize(pKeys as char, pValues as char):
+        def var s as Summarizer no-undo.
+        assign s = new Summarizer(pKeys, pValues).
+        return s:summarize(this-object).
     end method.
     
     method protected logical findBuffer(pName as character):

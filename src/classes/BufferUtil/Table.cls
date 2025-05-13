@@ -384,6 +384,16 @@ class classes.BufferUtil.Table:
         end.
     end method.
     
+    method public Table summarize(pAggregations as char):
+        return summarize('', pAggregations).
+    end method.
+    
+    method public Table summarize(pKeys as char, pValues as char):
+        def var s as Summarizer no-undo.
+        assign s = new Summarizer(pKeys, pValues).
+        return s:summarize(this-object).
+    end method.
+    
     method public JsonArray toJson():
         def var arr as JsonArray no-undo.
         assign arr = new JsonArray().

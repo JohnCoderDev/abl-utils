@@ -871,6 +871,39 @@ class classes.BufferUtil.Buffer:
         end.
     end method.
     
+    method public Buffer assignLabel(pLabels as char):
+        assign 
+            pLabels = replace(pLabels, "'", '"')
+            pLabels = Sanitizer:wipeSpaces(pLabels).
+        
+        def var i as int no-undo.
+        def var currentLabel as char no-undo.
+        do i = 1 to num-entries(pLabels, ' '):
+            assign currentLabel = entry(i, pLabels, ' ').
+            assignLabel(
+                entry(1, currentLabel, '='),
+                Wrapper:unwrap(entry(2, currentLabel, '='))
+            ).
+        end.
+        return this-object.
+    end method.
+    
+    method public Buffer assignLabel(pField as char, pNewlabel as char):
+        if not has(pField) then return this-object.
+        this-object:field(pField):label = pNewLabel.
+        return this-object.
+    end method.
+    
+    method public Table summarize(pAggregations as char):
+        return summarize('', pAggregations).
+    end method.
+    
+    method public Table summarize(pKeys as char, pValues as char):
+        def var s as Summarizer no-undo.
+        assign s = new Summarizer(pKeys, pValues).
+        return s:summarize(this-object).
+    end method.
+    
     method public override char toString():
         def var i as int no-undo.
         def var resultString as char no-undo.

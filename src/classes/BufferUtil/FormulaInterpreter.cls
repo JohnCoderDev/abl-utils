@@ -90,6 +90,8 @@ class classes.BufferUtil.FormulaInterpreter:
         addOperator('sum', 'classes.BufferUtil.Operators.SumOperator').
         addOperator('exp', 'classes.BufferUtil.Operators.ExponentialOperator').
         addOperator('product', 'classes.BufferUtil.Operators.MultiplyOperator').
+        addOperator('month', 'classes.BufferUtil.Operators.MonthOperator').
+        addOperator('year', 'classes.BufferUtil.Operators.YearOperator').
     end method.
     
     method public void applyFormula(pBuffer as Buffer, pTarget as char):
