@@ -38,6 +38,7 @@ class classes.BufferUtil.Summarizer:
     
     method public Summarizer assignDefaultAggregators():
         addAggregator('sum', 'classes.BufferUtil.Aggregators.SumAggregator').
+        addAggregator('squaredSum', 'classes.BufferUtil.Aggregators.SquaredSumAggregator').
         addAggregator('count', 'classes.BufferUtil.Aggregators.CountAggregator').        
         addAggregator('min', 'classes.BufferUtil.Aggregators.MinAggregator').
         addAggregator('max', 'classes.BufferUtil.Aggregators.MaxAggregator').
@@ -120,7 +121,7 @@ class classes.BufferUtil.Summarizer:
             resultTable:buffer:release().
             queryObject:next().
         end.
-        
+        assign resultTable = removeTemporaryFields(resultTable).
         return resultTable.
     end method.
     
