@@ -32,6 +32,21 @@ class classes.DateUtil.MDate:
             return endOfYear(today).
         end.    
     
+    def public static property nowHour as int
+        get:
+            return int(time / 3600).
+        end.
+        
+    def public static property nowMinute as int
+        get:
+            return int((time - nowHour * 3600) / 60).
+        end.
+        
+    def public static property nowSecond as int
+        get:
+            return int(time - nowHour * 3600 - nowMinute * 60).
+        end.
+    
     constructor MDate():
     end constructor.
     
