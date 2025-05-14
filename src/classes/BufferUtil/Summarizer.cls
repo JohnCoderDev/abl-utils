@@ -104,7 +104,7 @@ class classes.BufferUtil.Summarizer:
             resultTable:addIndexField('idx-primary', keyFields).
         end.
         
-        resultTable:prepare().        
+        resultTable:prepare().
         queryObject:first().
         
         do while not queryObject:offEnd():
@@ -196,6 +196,7 @@ class classes.BufferUtil.Summarizer:
             
             addAggregation(aggregationValues.supportFields).
         end.
+        
         
         createTemporaryFields(resultTable, pSourceBuffer).
         

@@ -6,6 +6,10 @@ using classes.BufferUtil.Errors.* from propath.
 using classes.StringUtil.* from propath.
 
 class classes.BufferUtil.Query:
+    def public static property queryEnd as char
+        get:
+            return chr(29).
+        end.
     def public property handle as handle no-undo get. protected set.
     def public property opened as log no-undo
         get:
@@ -59,10 +63,17 @@ class classes.BufferUtil.Query:
     method public Query parseQuery(pQuery as char):
         assign pQuery = Sanitizer:wipeSpaces(pQuery).
         def var i as int no-undo.
-        do i = 1 to num-entries(pQuery):
-            parseQuerySlice(entry(i, pQuery)).
+        do i = 1 to num-entries(pQuery, queryEnd):
+            parseQuerySlice(entry(i, pQuery, queryEnd)).
         end.
         return this-object.
+    end method.
+    
+    method public void show():
+        for each buffers:
+            message buffers.name view-as alert-box.
+            
+        end.
     end method.
     
     method protected void parseQuerySlice(pSlice as char):
@@ -226,6 +237,7 @@ class classes.BufferUtil.Query:
     
     method public Query prepare():
         if opened then return this-object.        
+        
         for each buffers:
             if buffers.buffer = ? then buffers.buffer = new Buffer(buffers.name).
             handle:add-buffer(cast(buffers.buffer, Buffer):handle).
@@ -314,7 +326,7 @@ class classes.BufferUtil.Query:
         assign 
             queryClone = cast(clone(), Query)
             resultArray = new JsonArray().
-            
+        
         queryClone:first().
         
         do while not queryClone:offEnd():
@@ -328,7 +340,7 @@ class classes.BufferUtil.Query:
     
     method public override object clone():
         def var queryClone as Query no-undo.
-        assign queryClone = new Query(queryString()).
+        assign queryClone = new Query(queryString(false)).
         for each buffers no-lock:
             queryClone:setBuffer(cast(buffers.buffer:clone(), Buffer)).
         end.
@@ -361,6 +373,7 @@ class classes.BufferUtil.Query:
         def var nameRelations as char no-undo.
         
         assign names = queryClone:firstFieldName().
+        
         repeat:
             if names = '' then leave.
             assign 
@@ -369,6 +382,7 @@ class classes.BufferUtil.Query:
                 bufferName = entry(2, names)
                 originalName = entry(3, names)
                 fieldHandle = queryClone:getField(originalName, bufferName).
+            
             
             if fieldHandle:extent > 0 then do:
                 resultTable:addField(fieldName, fieldHandle:data-type, fieldHandle:extent).
@@ -550,19 +564,23 @@ class classes.BufferUtil.Query:
     end method.
     
     method public char queryString():
+        return queryString(true).
+    end method.
+        
+    method public char queryString(pUseComma as log):
         def var resultString as char no-undo.
         for each buffers:
             assign resultString = resultString + Sanitizer:wipeSpaces(
                 buffers.queryMode + ' ' 
                 + buffers.name + ' '
-                + (if buffers.ofPhrase <> '' then ' of ' + buffers.ofPhrase + ' ' else '')
                 + (if buffers.includedFields <> '' then ' fields(' + buffers.includedFields + ') ' else '')
                 + (if buffers.excludedFields <> '' then ' except(' + buffers.excludedFields + ') ' else '')
+                + (if buffers.ofPhrase <> '' then ' of ' + buffers.ofPhrase + ' ' else '')
                 + buffers.lock + ' '
                 + (if buffers.wherePhrase <> '' then ' where ' + buffers.wherePhrase + ' ' else '')
                 + (if buffers.breakBy <> '' then ' break by ' + buffers.breakBy + ' ' else '')
                 + buffers.orderBy
-            ) + ','.    
+            ) + (if pUseComma then ',' else queryEnd).    
         end.
         
         assign resultString = 'for ' + substring(resultString, 1, length(resultString) - 1).

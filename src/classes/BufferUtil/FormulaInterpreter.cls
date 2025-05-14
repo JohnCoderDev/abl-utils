@@ -91,7 +91,9 @@ class classes.BufferUtil.FormulaInterpreter:
         addOperator('exp', 'classes.BufferUtil.Operators.ExponentialOperator').
         addOperator('product', 'classes.BufferUtil.Operators.MultiplyOperator').
         addOperator('month', 'classes.BufferUtil.Operators.MonthOperator').
-        addOperator('year', 'classes.BufferUtil.Operators.YearOperator').
+        addOperator('containsOneOf', 'classes.BufferUtil.Operators.ContainsOneOfOperator').
+        addOperator('if', 'classes.BufferUtil.Operators.IfOperator').
+        addOperator('cando', 'classes.BufferUtil.Operators.CanDoOperator').
     end method.
     
     method public void applyFormula(pBuffer as Buffer, pTarget as char):
@@ -164,6 +166,11 @@ class classes.BufferUtil.FormulaInterpreter:
                 subExpression = if isLastExpression then expression else subExpression
                 newSubExpression = subExpression
                 subExpressionPosition = index(expression, subExpression).
+            
+            if expressionIsId(subExpression) and not isLastExpression then do:
+                assign expression = replace(expression, "(" + subExpression + ")", subExpression).
+                next.
+            end.
             
             do i = 1 to num-entries(subExpression):
                 assign
@@ -239,7 +246,7 @@ class classes.BufferUtil.FormulaInterpreter:
                 
                 assign
                     pExpression = replace(pExpression, operationPhrase, operations.id)
-                    operatorStart = findNextOperatorIndex(pExpression).    
+                    operatorStart = findNextOperatorIndex(pExpression).        
             end.
         end.
         
@@ -292,7 +299,7 @@ class classes.BufferUtil.FormulaInterpreter:
         
         if asc(currentChar) = -1 then return ''.
         
-        do while not Matcher:hasOneOfChars(currentChar, tokenDelimiters) and asc(currentChar) <> -1:
+        do while not Matcher:hasOneOfChars(currentChar, tokenDelimiters) and asc(currentChar) <> -1 and not isReserved(currentChar):
             if pIncrement < 0 then do:
                 assign token = currentChar + token.
             end.
@@ -416,6 +423,11 @@ class classes.BufferUtil.FormulaInterpreter:
         end.
         
         return newExpression.
+    end method.
+    
+    method protected log expressionIsId(pExpression as char):
+        if not Matcher:startsWith(pExpression, idIndicator) then return false.
+        return TypeInterpreter:isInt64(Splitter:textAfter(pExpression, idIndicator)).
     end method.
     
     method public log isReserved(pString as char):
