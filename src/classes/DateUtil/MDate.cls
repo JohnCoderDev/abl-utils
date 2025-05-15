@@ -34,17 +34,17 @@ class classes.DateUtil.MDate:
     
     def public static property nowHour as int
         get:
-            return int(time / 3600).
+            return int(truncate(time / 3600, 0)).
         end.
         
     def public static property nowMinute as int
         get:
-            return int((time - nowHour * 3600) / 60).
+            return int(truncate((time - nowHour * 3600) / 60, 0)).
         end.
         
     def public static property nowSecond as int
         get:
-            return int(time - nowHour * 3600 - nowMinute * 60).
+            return time - nowHour * 3600 - nowMinute * 60.
         end.
     
     constructor MDate():
