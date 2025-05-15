@@ -27,7 +27,8 @@ class classes.BufferUtil.Query:
         field excludedFields as char
         field orderBy as char
         field breakBy as char
-        field ofPhrase as char.
+        field ofPhrase as char
+        field useIndex as char.
         
     def temp-table fieldNames
         field fieldName as char
@@ -147,6 +148,10 @@ class classes.BufferUtil.Query:
                 if Matcher:containsOneOf(argSplitter:next(), 'ascending,descending') then do:
                     assign buffers.orderBy = buffers.orderBy + ' ' + argSplitter:current().
                 end.
+            end.
+            
+            if argSplitter:current() = 'use-index' then do:
+                assign buffers.useIndex = buffers.useIndex + ' use-index ' + argSplitter:next().
             end.
             
             if argSplitter:current() = '' then leave.
