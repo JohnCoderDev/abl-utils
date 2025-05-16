@@ -568,6 +568,7 @@ class classes.BufferUtil.Query:
         create query handle.
     end method.
     
+    for
     method public char queryString():
         return queryString(true).
     end method.
@@ -581,6 +582,7 @@ class classes.BufferUtil.Query:
                 + (if buffers.includedFields <> '' then ' fields(' + buffers.includedFields + ') ' else '')
                 + (if buffers.excludedFields <> '' then ' except(' + buffers.excludedFields + ') ' else '')
                 + (if buffers.ofPhrase <> '' then ' of ' + buffers.ofPhrase + ' ' else '')
+                + (if buffers.useIndex <> '' then ' use-index ' + buffers.useIndex + ' ' else '')
                 + buffers.lock + ' '
                 + (if buffers.wherePhrase <> '' then ' where ' + buffers.wherePhrase + ' ' else '')
                 + (if buffers.breakBy <> '' then ' break by ' + buffers.breakBy + ' ' else '')
