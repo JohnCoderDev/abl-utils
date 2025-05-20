@@ -1,4 +1,5 @@
 block-level on error undo, throw.
+using classes.StringUtil.* from propath.
 using classes.BufferUtil.* from propath.
 using classes.BufferUtil.Errors.* from propath.
 
@@ -140,15 +141,28 @@ class classes.BufferUtil.QueryBuilder:
         return this-object.
     end method.
     
-    method public char toString():
-        def var resultString as char no-undo.
-        def var currentQuery as char no-undo.
+    method public override char toString():
+        def var resultQuery as char no-undo.
         for each buffers no-lock:
             assign
-                currentQuery = 
-                    buffers.queryMode + ' ' .
+                resultQuery = resultQuery 
+                    + buffers.queryMode + ' ' + buffers.name + ' ' 
+                    + (if buffers.includedFields <> '' then substitute(' fields(&1) ', trim(buffers.includedFields)) else '')
+                    + (if buffers.excludedFields <> '' then substitute(' except(&1) ', trim(buffers.excludedFields)) else '')
+                    + (if buffers.useIndex <> '' then substitute(' use-index &1 ', buffers.useIndex) else '')
+                    + (if buffers.joinMode <> '' then substitute(' &1 ', buffers.joinMode) else '')
+                    + (if buffers.ofTable <> '' then substitute(' of &1 ', buffers.ofTable) else '')
+                    + substitute(' &1 ', buffers.lock)
+                    + (if buffers.wherePhrase <> '' then substitute(' where &1 ', buffers.wherePhrase) else '')
+                    + (if buffers.breakBy then ' break ' else '')
+                    + (if buffers.orderBy <> '' then substitute(' &1 ', buffers.orderBy) else '') 
+                    + ','.
         end.
-        return resultString.
+        assign
+            resultQuery = substring(resultQuery, 1, length(resultQuery) - 1)
+            resultQuery = substitute('for &1',resultQuery)
+            resultQuery = Sanitizer:wipeSpaces(resultQuery).
+        return resultQuery.
     end method.
     
     method protected void assertBuffer():
