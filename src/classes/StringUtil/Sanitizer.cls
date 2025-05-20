@@ -131,7 +131,6 @@ class classes.StringUtil.Sanitizer:
             cased = shiftLeftNumbers(cased)
             cased = shiftLeft(cased, '-_')
             cased = removeNonPrintable(cased)
-            cased = lower(cased)
             cased = replaceChars(cased, ' ', '-').
         return cased.    
     end method.

@@ -11,6 +11,7 @@ class classes.BufferUtil.Query:
             return chr(29).
         end.
     def public property handle as handle no-undo get. protected set.
+    def public property builder as QueryBuilder no-undo get. set.
     def public property opened as log no-undo
         get:
             if not valid-handle(handle) then return false.
@@ -20,15 +21,8 @@ class classes.BufferUtil.Query:
     define temp-table buffers   
         field name as character
         field buffer as object
-        field lock as char init 'no-lock'
-        field queryMode as char init 'each'
-        field wherePhrase as char
         field includedFields as char
-        field excludedFields as char
-        field orderBy as char
-        field breakBy as char
-        field ofPhrase as char
-        field useIndex as char.
+        field excludedFields as char.
         
     def temp-table fieldNames
         field fieldName as char
@@ -44,9 +38,14 @@ class classes.BufferUtil.Query:
         field fieldType as char
         field formula as char.
         
-    constructor Query(pQuery as character):
+    constructor Query(pQuery as char):
         create query handle.
         parseQuery(pQuery).
+    end constructor.
+    
+    constructor Query(pBuilder as QueryBuilder):
+        create query handle.
+        parseQuery(pBuilder).
     end constructor.
     
     constructor Query(pTable as Table):
@@ -61,104 +60,18 @@ class classes.BufferUtil.Query:
         setBuffer(pBuffer).
     end constructor.
     
-    method public Query parseQuery(pQuery as char):
-        assign pQuery = Sanitizer:wipeSpaces(pQuery).
-        def var i as int no-undo.
-        do i = 1 to num-entries(pQuery, queryEnd):
-            parseQuerySlice(entry(i, pQuery, queryEnd)).
-        end.
+    method public Query parseQuery(pQueryBuilder as QueryBuilder):
+        empty temp-table buffers.
+        builder = pQueryBuilder.
+        builder:copyBuffersToQuery(buffer buffers:handle).
         return this-object.
     end method.
     
-    method public void show():
-        for each buffers:
-            message buffers.name view-as alert-box.
-            
-        end.
-    end method.
-    
-    method protected void parseQuerySlice(pSlice as char):
-        create buffers.
-        
-        if Matcher:startsWith(pSlice, 'for ') then do:
-            pSlice = Splitter:textAfter(pSlice, 'for ').    
-        end.
-        
-        def var fieldsPhrase as char no-undo.
-        def var exceptPhrase as char no-undo.
-        
-        assign
-            fieldsPhrase = Extractor:extract(pSlice, 'fields(', ')', true)
-            exceptPhrase = Extractor:extract(pSlice, 'except(', ')', true).
-        
-        if fieldsPhrase <> '' then do:
-            assign 
-                buffers.includedFields = Extractor:extract(fieldsPhrase, '(', ')')
-                pSlice = replace(pSlice, fieldsPhrase, '').
-        end.
-        
-        if exceptPhrase <> '' then do:
-            assign
-                buffers.excludedFields = Extractor:extract(exceptPhrase, '(', ')')
-                pSlice = replace(pSlice, excludedFields, '').
-        end.
-        
-        def var argSplitter as ArgumentSplitter no-undo.
-        assign argSplitter = new ArgumentSplitter(pSlice).
-        
-        if Matcher:startsWithOneOf(argSplitter:argument,'each,first,last') then do:
-            assign
-                buffers.queryMode = argSplitter:next()
-                buffers.name = argSplitter:next().
-        end.
-        else do:
-            assign buffers.name = argSplitter:next().
-        end.
-        
-        if argSplitter:next() = 'of' then do:
-            assign buffers.ofPhrase = argSplitter:next(). 
-        end.
-        
-        def var locks as char no-undo.
-        assign locks = 'no-lock,share-lock,exclusive-lock'.
-        
-        repeat:
-            if Matcher:containsOneOf(argSplitter:current(), locks) then do:
-                assign buffers.lock = argSplitter:current().
-                argSplitter:next().
-            end.
-            
-            if argSplitter:current() = 'where' then do:
-                do while argSplitter:next() <> '':
-                    if Matcher:containsOneOf(argSplitter:current(), locks + 'break,by') then leave.
-                    assign buffers.wherePhrase = buffers.wherePhrase + ' ' + argSplitter:current().
-                end.
-            end.
-            
-            if argSplitter:current() = 'break' then do:
-                if argSplitter:next() <> 'by' then argSplitter:previous().
-                do while argSplitter:next() <> '':
-                    if Matcher:containsOneOf(argSplitter:current(), locks + 'by,where') then leave.
-                    assign buffers.breakBy = buffers.breakBy + ' ' + argSplitter:current().
-                end.
-            end.
-            
-            if argSplitter:current() = 'by' then do:
-                assign buffers.orderBy = buffers.orderBy + ' by ' + argSplitter:next().
-                if Matcher:containsOneOf(argSplitter:next(), 'ascending,descending') then do:
-                    assign buffers.orderBy = buffers.orderBy + ' ' + argSplitter:current().
-                end.
-            end.
-            
-            if argSplitter:current() = 'use-index' then do:
-                assign buffers.useIndex = buffers.useIndex + ' use-index ' + argSplitter:next().
-            end.
-            
-            if argSplitter:current() = '' then leave.
-            argSplitter:next().
-        end.
-        
-        delete object argSplitter.
+    method public Query parseQuery(pQuery as char):
+        empty temp-table buffers.
+        builder:parseQuery(pQuery).
+        builder:copyBuffersToQuery(buffer buffers:handle).
+        return this-object.
     end method.
     
     method public Query setBuffer(pBuffer as handle):
@@ -227,6 +140,7 @@ class classes.BufferUtil.Query:
         return ''.
     end method.
     
+    
     method public Buffer getBuffer():
         find first buffers no-error.
         if avail buffers then do:
@@ -247,8 +161,7 @@ class classes.BufferUtil.Query:
             if buffers.buffer = ? then buffers.buffer = new Buffer(buffers.name).
             handle:add-buffer(cast(buffers.buffer, Buffer):handle).
         end.
-        
-        handle:query-prepare(queryString()).
+        handle:query-prepare(string(builder)).
         handle:query-open.
         return this-object.
     end method.
@@ -345,7 +258,7 @@ class classes.BufferUtil.Query:
     
     method public override object clone():
         def var queryClone as Query no-undo.
-        assign queryClone = new Query(queryString(false)).
+        assign queryClone = new Query(cast(builder:clone(), QueryBuilder)).
         for each buffers no-lock:
             queryClone:setBuffer(cast(buffers.buffer:clone(), Buffer)).
         end.
@@ -527,6 +440,16 @@ class classes.BufferUtil.Query:
         return this-object.
     end method.
     
+    method public log firstOf(pGroup as int):
+        prepare().
+        return handle:first-of(pGroup).
+    end method.
+    
+    method public log lastOf(pGroup as int):
+        prepare().
+        return handle:last-of(pGroup).
+    end method.
+    
     method public Query first():
         prepare().
         handle:get-first.
@@ -566,32 +489,6 @@ class classes.BufferUtil.Query:
             delete object handle no-error.
         end.
         create query handle.
-    end method.
-    
-    for
-    method public char queryString():
-        return queryString(true).
-    end method.
-        
-    method public char queryString(pUseComma as log):
-        def var resultString as char no-undo.
-        for each buffers:
-            assign resultString = resultString + Sanitizer:wipeSpaces(
-                buffers.queryMode + ' ' 
-                + buffers.name + ' '
-                + (if buffers.includedFields <> '' then ' fields(' + buffers.includedFields + ') ' else '')
-                + (if buffers.excludedFields <> '' then ' except(' + buffers.excludedFields + ') ' else '')
-                + (if buffers.ofPhrase <> '' then ' of ' + buffers.ofPhrase + ' ' else '')
-                + (if buffers.useIndex <> '' then ' use-index ' + buffers.useIndex + ' ' else '')
-                + buffers.lock + ' '
-                + (if buffers.wherePhrase <> '' then ' where ' + buffers.wherePhrase + ' ' else '')
-                + (if buffers.breakBy <> '' then ' break by ' + buffers.breakBy + ' ' else '')
-                + buffers.orderBy
-            ) + (if pUseComma then ',' else queryEnd).    
-        end.
-        
-        assign resultString = 'for ' + substring(resultString, 1, length(resultString) - 1).
-        return resultString.
     end method.
     
     method public Table addFormula(pFieldName as char, pFieldType as char, pFormula as char):
