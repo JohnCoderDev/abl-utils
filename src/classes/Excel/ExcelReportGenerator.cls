@@ -13,7 +13,7 @@ class classes.Excel.ExcelReportGenerator:
     def private temp-table columnsFormats 
         field colIndex as int 
         field colFormat as char
-        index idx-col as primary unique colIndex.
+        index idxCol as primary unique colIndex.
         
     method public ExcelReportGenerator addFormat(pColumn as int, pFormat as char):
         if not findColumnFormat(pColumn) then do:
@@ -23,6 +23,22 @@ class classes.Excel.ExcelReportGenerator:
             columnsFormats.colIndex = pColumn
             columnsFormats.colFormat = pFormat.
         return this-object.    
+    end method.
+    
+    method public Excel parseQuery(pQuery as Query, pPath as char):
+        return parseQuery(pQuery, pPath, true).
+    end method.
+    
+    method public Excel parseQuery(pQuery as Query, pPath as char, pUseLabel as log):
+        return parseQuery(pQuery, pPath, pUseLabel, 'merge').
+    end method.
+    
+    method public Excel parseQuery(pQuery as Query, pPath as char, pUseLabel as log, pMode as char):
+        return parseQuery(pQuery, pPath, pUseLabel, pMode, ?).
+    end method.
+    
+    method public Excel parseQuery(pQuery as Query, pPath as char, pUseLabel as log, pMode as char, pFields as char):
+        return parseTable(pQuery:toTable(pMode), pPath, pUseLabel, pFields).
     end method.
     
     method public Excel parseTable(pTable as Table, pPath as char):
