@@ -88,12 +88,13 @@ class classes.BufferUtil.Summarizer:
         def var queryBuffer as Buffer no-undo.
         def var keyFields as char no-undo.
         def var currentAggregator as Aggregator no-undo.
-       
+        
         assign 
             resultTable = prepareSummaryTable(pTable, pTable:buffer)
             queryObject = new Query(pTable)
             queryBuffer = queryObject:getBuffer()
             keyFields = keyFields().
+        
         
         for each aggregationKeys:
             assign aggregationKeys.fieldType = queryBuffer:type(aggregationKeys.fieldName).

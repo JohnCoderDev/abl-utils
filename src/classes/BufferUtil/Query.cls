@@ -6,10 +6,6 @@ using classes.BufferUtil.Errors.* from propath.
 using classes.StringUtil.* from propath.
 
 class classes.BufferUtil.Query:
-    def public static property queryEnd as char
-        get:
-            return chr(29).
-        end.
     def public property handle as handle no-undo get. protected set.
     def public property builder as QueryBuilder no-undo get. set.
     def public property opened as log no-undo
@@ -69,6 +65,7 @@ class classes.BufferUtil.Query:
     
     method public Query parseQuery(pQuery as char):
         empty temp-table buffers.
+        assign builder = new QueryBuilder().
         builder:parseQuery(pQuery).
         builder:copyBuffersToQuery(buffer buffers:handle).
         return this-object.
@@ -161,6 +158,7 @@ class classes.BufferUtil.Query:
             if buffers.buffer = ? then buffers.buffer = new Buffer(buffers.name).
             handle:add-buffer(cast(buffers.buffer, Buffer):handle).
         end.
+        
         handle:query-prepare(string(builder)).
         handle:query-open.
         return this-object.
