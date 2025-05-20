@@ -257,10 +257,21 @@ class classes.BufferUtil.Query:
     method public override object clone():
         def var queryClone as Query no-undo.
         assign queryClone = new Query(cast(builder:clone(), QueryBuilder)).
+        
         for each buffers no-lock:
             queryClone:setBuffer(cast(buffers.buffer:clone(), Buffer)).
         end.
+        
         return queryClone.
+    end method.
+    
+    method public void showTable():
+        for each buffers:
+            disp
+                buffers.name
+                (buffers.buffer = ?) 
+            with scrollable.    
+        end.
     end method.
     
     method public Table toTable():
@@ -388,6 +399,7 @@ class classes.BufferUtil.Query:
             assign 
                 b = cast(buffers.buffer, Buffer)
                 prefix = (if pPrefix then b:name + '-' else '').
+            
             
             do i = 1 to b:numFields():
                 if Matcher:contains(buffers.excludedFields, b:fieldName(i)) 
