@@ -358,7 +358,12 @@ class classes.BufferUtil.Query:
                     bufferObject:field(fieldName):buffer-value
                 ).
                 
+                if setNullsAsInitial then do:
+                    resultTable:buffer:replaceNullsWithInitial().
+                end.
+                
                 resultTable:calculateFormulas().
+                
                 if setNullsAsInitial then do:
                     resultTable:buffer:replaceNullsWithInitial().
                 end.
