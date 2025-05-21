@@ -328,7 +328,7 @@ class classes.BufferUtil.Query:
                     or (buffers.includedFields = '' and buffers.excludedFields = '') 
                 then do:
                     assign bufferNames = substitute('&1&2:&3:&4,', bufferNames, bufferName, fieldName, tableName).
-                    resultTable:addField(tableName, fieldType).
+                    resultTable:addField(tableName, fieldType, fieldExtent).
                 end.
             end.
         end.
