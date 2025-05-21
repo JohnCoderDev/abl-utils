@@ -276,7 +276,7 @@ class classes.BufferUtil.Query:
                 bufferObject = cast(buffers.buffer, Buffer)
                 bufferObject = cast(bufferObject:clone(), Buffer).
             
-            newQuery:setBuffer(bufferObject).
+            newQuery:setBuffer(bufferObject, buffers.name).
         end.
         
         for each renames no-lock:

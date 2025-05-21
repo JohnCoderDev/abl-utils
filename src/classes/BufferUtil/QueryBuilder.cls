@@ -7,7 +7,6 @@ using classes.BufferUtil.Errors.* from propath.
 class classes.BufferUtil.QueryBuilder:
     def protected property queryModes as char init "each,first,last" get.
     def protected property lockModes as char init "no-lock,exclusive-lock,shared-lock" get.
-    def protected property joinModes as char no-undo init "outer-join,left" get.
     def protected property orderModes as char no-undo init "ascending,descending" get.
     
     def protected property idChar as char no-undo
@@ -303,16 +302,26 @@ class classes.BufferUtil.QueryBuilder:
         assign sliceWordCount = num-entries(pSlice, ' ').
         
         do j = i to sliceWordCount:
-            assign 
-                currentWord = entry(j, pSlice, ' ').
+            assign currentWord = entry(j, pSlice, ' ').
+            
             if currentWord = 'of' then do:
                 this-object:of(entry(j + 1, pSlice, ' ')).
                 assign j = j + 1.
                 next.
             end.
             
-            if lookup(currentWord, joinModes) > 0 then do:
-                this-object:joinMode(currentWord).
+            if currentWord = 'left' then do:
+                if j + 1 <= sliceWordCount then do:
+                    if entry(j + 1, pSlice, ' ') = 'outer-join' then do:
+                        assign j = j + 1.
+                    end.
+                end.
+                joinMode('left outer-join').
+                next.
+            end.
+            
+            if currentWord = 'outer-join' then do:
+                joinMode(currentWord).
                 next.
             end.
             
