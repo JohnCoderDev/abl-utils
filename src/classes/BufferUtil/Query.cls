@@ -287,6 +287,14 @@ class classes.BufferUtil.Query:
             ).    
         end.
         
+        for each formulas no-lock:
+            newQuery:addFormula(
+                formulas.fieldName, 
+                formulas.fieldType, 
+                formulas.formula
+            ).
+        end.
+        
         return newQuery.
     end method.
     
@@ -462,13 +470,13 @@ class classes.BufferUtil.Query:
         create query handle.
     end method.
     
-    method public Table addFormula(pFieldName as char, pFieldType as char, pFormula as char):
+    method public Query addFormula(pFieldName as char, pFieldType as char, pFormula as char):
         create formulas.
         assign
             formulas.fieldName = pFieldname
             formulas.fieldType = pFieldType
             formulas.formula = pFormula.
-        this-object.    
+        return this-object.    
     end method.
     
     method public Table summarize(pAggregations as char):
