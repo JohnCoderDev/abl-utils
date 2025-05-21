@@ -843,6 +843,36 @@ class classes.BufferUtil.Buffer:
         end.
     end method.
     
+    method public log fieldHasNull(pField as char):
+        if has(pField) then do:
+            return this-object:field(pField):buffer-value = ?.
+        end.
+    end method.
+    
+    method public log fieldHasNull(pField as char, pExtent as int):
+        if has(pField) then do:
+            return this-object:field(pField):buffer-value(pExtent) = ?.
+        end.
+    end method.
+    
+    method public Buffer replaceNullsWithInitial():
+        def var i as int no-undo.
+        def var j as int no-undo.
+        def var currentFieldName as char no-undo.
+        do i = 1 to numFields():
+            assign currentFieldName = fieldName(i).
+            if this-object:extent(currentFieldName) > 0 then do:
+                do j = 1 to this-object:extent(currentFieldName):
+                    setInitial(currentFieldName, j).
+                end.
+            end.
+            else do:
+                setInitial(currentFieldName).
+            end.
+        end.
+        return this-object.
+    end method.
+    
     method public log fieldHasInitial(pField as char):
         if has(pField) then return this-object:value(pField) = initial(pField).
     end method.
