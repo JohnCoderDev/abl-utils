@@ -2,6 +2,7 @@ block-level on error undo, throw.
 using Progress.Lang.* from propath.
 using Progress.Json.ObjectModel.* from propath.
 using classes.BufferUtil.* from propath.
+using classes.VariableUtil.* from propath.
 using classes.StringUtil.* from propath.
 using classes.Shared.Interfaces.* from propath.
 
@@ -616,6 +617,168 @@ class classes.BufferUtil.Buffer:
             end catch.
         end.
         return false.
+    end method.
+    
+    method public log updateField(pField as char, pValue as char extent):
+        do on error undo:
+            def var i as int no-undo.
+            def var variableExtent as int no-undo.
+            assign variableExtent = VariableDump:variableExtent(pValue).
+            
+            do i = 1 to variableExtent:
+                if not updateField(pField, pValue[i], i) then 
+                    return false.
+            end.
+            
+            return true.
+            catch errorObject as Error:
+                return false.
+            end.
+        end.
+    end method.
+    
+    method public log updateField(pField as char, pValue as object extent):
+        do on error undo:
+            def var i as int no-undo.
+            def var variableExtent as int no-undo.
+            assign variableExtent = VariableDump:variableExtent(pValue).
+            
+            do i = 1 to variableExtent:
+                if not updateField(pField, pValue[i], i) then 
+                    return false.
+            end.
+            
+            return true.
+            catch errorObject as Error:
+                return false.
+            end.
+        end.
+    end method.
+    
+    method public log updateField(pField as char, pValue as datetime-tz extent):
+        do on error undo:
+            def var i as int no-undo.
+            def var variableExtent as int no-undo.
+            assign variableExtent = VariableDump:variableExtent(pValue).
+            
+            do i = 1 to variableExtent:
+                if not updateField(pField, pValue[i], i) then 
+                    return false.
+            end.
+            
+            return true.
+            catch errorObject as Error:
+                return false.
+            end.
+        end.
+    end method.
+    
+    method public log updateField(pField as char, pValue as datetime extent):
+        do on error undo:
+            def var i as int no-undo.
+            def var variableExtent as int no-undo.
+            assign variableExtent = VariableDump:variableExtent(pValue).
+            
+            do i = 1 to variableExtent:
+                if not updateField(pField, pValue[i], i) then 
+                    return false.
+            end.
+            
+            return true.
+            catch errorObject as Error:
+                return false.
+            end.
+        end.
+    end method.
+    
+    method public log updateField(pField as char, pValue as date extent):
+        do on error undo:
+            def var i as int no-undo.
+            def var variableExtent as int no-undo.
+            assign variableExtent = VariableDump:variableExtent(pValue).
+            
+            do i = 1 to variableExtent:
+                if not updateField(pField, pValue[i], i) then 
+                    return false.
+            end.
+            
+            return true.
+            catch errorObject as Error:
+                return false.
+            end.
+        end.
+    end method.
+    
+    method public log updateField(pField as char, pValue as log extent):
+        do on error undo:
+            def var i as int no-undo.
+            def var variableExtent as int no-undo.
+            assign variableExtent = VariableDump:variableExtent(pValue).
+            
+            do i = 1 to variableExtent:
+                if not updateField(pField, pValue[i], i) then 
+                    return false.
+            end.
+            
+            return true.
+            catch errorObject as Error:
+                return false.
+            end.
+        end.
+    end method.
+    
+    method public log updateField(pField as char, pValue as dec extent):
+        do on error undo:
+            def var i as int no-undo.
+            def var variableExtent as int no-undo.
+            assign variableExtent = VariableDump:variableExtent(pValue).
+            
+            do i = 1 to variableExtent:
+                if not updateField(pField, pValue[i], i) then 
+                    return false.
+            end.
+            
+            return true.
+            catch errorObject as Error:
+                return false.
+            end.
+        end.
+    end method.
+    
+    method public log updateField(pField as char, pValue as int64 extent):
+        do on error undo:
+            def var i as int no-undo.
+            def var variableExtent as int no-undo.
+            assign variableExtent = VariableDump:variableExtent(pValue).
+            
+            do i = 1 to variableExtent:
+                if not updateField(pField, pValue[i], i) then 
+                    return false.
+            end.
+            
+            return true.
+            catch errorObject as Error:
+                return false.
+            end.
+        end.
+    end method.
+    
+    method public log updateField(pField as char, pValue as int extent):
+        do on error undo:
+            def var i as int no-undo.
+            def var variableExtent as int no-undo.
+            assign variableExtent = VariableDump:variableExtent(pValue).
+            
+            do i = 1 to variableExtent:
+                if not updateField(pField, pValue[i], i) then 
+                    return false.
+            end.
+            
+            return true.
+            catch errorObject as Error:
+                return false.
+            end.
+        end.
     end method.
     
     method public handle field(pIndex as int):

@@ -15,7 +15,7 @@ class classes.BufferUtil.Query:
         
     def public property opened as log no-undo
         get:
-            if valid then return false.
+            if not valid then return false.
             return handle:is-open.
         end.
     
@@ -28,8 +28,9 @@ class classes.BufferUtil.Query:
     def temp-table fieldNames
         field bufferName as char
         field realName as char
-        field newName as char
-        field autoCalculatedName as log.    
+        field newName as char.
+    
+    def temp-table renames like fieldNames.
         
     def temp-table formulas
         field fieldName as char
@@ -74,40 +75,27 @@ class classes.BufferUtil.Query:
     end method.
     
     method public Query setFieldName(pBuffer as char, pField as char, pNewName as char):
-        find first fieldNames
-            where bufferName = pBuffer and realName = pField
-            no-error.
-        
-        if avail fieldNames then do:
-            assign 
-                fieldNames.newName = pNewName
-                fieldNames.autoCalculatedName = false.
-        end.
-        
-        return this-object.
-    end method.
-    
-    method public Query setFieldName(pField as char, pNewName as char):
-        find first fieldNames
-            where realName = pField
-            no-error.
-        
-        if avail fieldNames then do:
-            assign 
-                fieldNames.newName = pNewName
-                fieldNames.autoCalculatedName = false.
-        end.
-        
+        create renames.
+        assign
+            renames.bufferName = pBuffer
+            renames.realName = pField
+            renames.newName = Sanitizer:kebabCase(pNewName)
+            renames.newName = Splitter:crop(renames.newName, 32).
         return this-object.
     end method.
     
     method public Query calculateFieldNames():
-        for each fieldNames where newName = '':
+        for each fieldNames:
             assign 
                 fieldNames.newName = substitute("&1_&2", fieldNames.bufferName, fieldNames.realName)
                 fieldNames.newName = Sanitizer:kebabCase(fieldNames.newName)
-                fieldNames.newName = Splitter:crop(fieldNames.newName, 32)
-                fieldNames.autoCalculatedName = true.    
+                fieldNames.newName = Splitter:crop(fieldNames.newName, 32).    
+            
+            for first renames 
+                where renames.bufferName = fieldNames.bufferName 
+                and renames.realName = fieldNames.realName:
+                assign fieldNames.newName = renames.newName.
+            end.
         end.
         return this-object.
     end method.
@@ -221,12 +209,18 @@ class classes.BufferUtil.Query:
         
         for each buffers:
             if buffers.buffer = ? then do:
-                assign 
+                assign  
                     databaseBuffer = new Buffer(buffers.name)
                     buffers.buffer = databaseBuffer.
+                addBufferFields(databaseBuffer).    
             end.
+            else do:
+                assign databaseBuffer = cast(buffers.buffer, Buffer).
+            end.
+            handle:add-buffer(databaseBuffer:handle).
         end.
         
+        calculateFieldNames().
         handle:query-prepare(builder:toString()).
         handle:query-open.
         return this-object.
@@ -241,34 +235,31 @@ class classes.BufferUtil.Query:
         assign resultJson = new JsonObject().
         if not opened then return resultJson.
         
-    end method.
-    
-    method public JsonArray toJsonArray():
-        return toJsonArray('separate').
-    end method.
-    
-    method public JsonArray toJsonArray(pStrategy as char):
-        return toJsonArray(pStrategy, false).
-    end method.
-    
-    method public JsonArray toJsonArray(pStrategy as char, pPrefix as log):
-        prepare().
-        def var queryClone as Query no-undo.
-        def var resultArray as JsonArray no-undo.
+        def var fieldName as char no-undo.
+        def var jsonName as char no-undo.
+        def var bufferObject as Buffer no-undo.
         
-        assign 
-            queryClone = cast(clone(), Query)
-            resultArray = new JsonArray().
-        
-        queryClone:first().
-        
-        do while not queryClone:offEnd():
-            resultArray:add(queryClone:toJson(pStrategy, pPrefix)).
-            queryClone:next().
+        for each fieldNames no-lock:
+            for first buffers where buffers.name = fieldNames.bufferName:
+                assign 
+                    bufferObject = cast(buffers.buffer, Buffer)
+                    fieldName = fieldNames.realName
+                    jsonName = fieldName.
+                
+                if not pUseOriginalName then do:
+                    assign jsonName = fieldNames.newName.
+                end.
+                
+                if resultJson:has(jsonName) then do:
+                    resultJson:set(jsonName, bufferObject:field(fieldName):buffer-value).
+                end.
+                else do:
+                    resultJson:add(jsonName, bufferObject:field(fieldName):buffer-value).
+                end.
+            end.
         end.
         
-        delete object queryClone no-error.
-        return resultArray.
+        return resultJson.
     end method.
     
     method public override object clone():
@@ -288,11 +279,95 @@ class classes.BufferUtil.Query:
             newQuery:setBuffer(bufferObject).
         end.
         
+        for each renames no-lock:
+            newQuery:setFieldName(
+                renames.bufferName,
+                renames.realName,
+                renames.newName
+            ).    
+        end.
+        
         return newQuery.
     end method.
     
-    method public Table currentQueryToTable(pUsePrefix as log):
+    method public Table currentQueryToTable():
+        return currentQueryToTable(true).
+    end method.
+    
+    method public Table currentQueryToTable(pUseOriginalName as log):
+        prepare().
+        def var resultTable as Table no-undo.
+        assign resultTable = new Table().
         
+        def var bufferObject as Buffer no-undo.
+        def var fieldName as char no-undo.
+        def var tableName as char no-undo.
+        def var fieldType as char no-undo.
+        def var fieldExtent as int no-undo.
+        def var bufferName as char no-undo.
+        def var bufferNames as char no-undo.
+        def var tableNames as char no-undo.
+        def var i as int no-undo.
+        
+        for each fieldNames:
+            for first buffers where buffers.name = fieldNames.bufferName:
+                assign 
+                    bufferObject = cast(buffers.buffer, Buffer)
+                    bufferName = bufferObject:name
+                    fieldName = fieldNames.realName
+                    fieldExtent = bufferObject:extent(fieldName)
+                    fieldType = bufferObject:type(fieldName)
+                    tableName = fieldName.
+                
+                if not pUseOriginalName or currentFieldNameHasRename() then do:
+                    assign tableName = fieldNames.newName.
+                end.
+                
+                if (buffers.includedFields <> '' and lookup(fieldName, buffers.includedFields, ' ') > 0) 
+                    or (buffers.includedFields = '' and lookup(fieldName, buffers.excludedFields, ' ') = 0) 
+                    or (buffers.includedFields = '' and buffers.excludedFields = '') 
+                then do:
+                    assign bufferNames = substitute('&1&2:&3:&4,', bufferNames, bufferName, fieldName, tableName).
+                    resultTable:addField(tableName, fieldType).
+                end.
+            end.
+        end.
+        
+        assign bufferNames = substring(bufferNames, 1, length(bufferNames) - 1).
+        this-object:first().
+        
+        createFormulaFields(resultTable).
+        resultTable:prepare().
+        
+        do while not offEnd():
+            resultTable:createBuffer().
+            do i = 1 to num-entries(bufferNames):
+                assign
+                    tableNames = entry(i, bufferNames)
+                    bufferName = entry(1, tableNames, ':')
+                    fieldName = entry(2, tableNames, ':')
+                    tableName = entry(3, tableNames, ':')
+                    bufferObject = getBuffer(bufferName).
+                
+                resultTable:buffer:updateField(
+                    tableName, 
+                    bufferObject:field(fieldName):buffer-value
+                ).
+                
+                resultTable:calculateFormulas().
+            end.
+            this-object:next().
+        end.
+        return resultTable.
+    end method.
+    
+    method protected log currentFieldNameHasRename():
+        return can-find(
+            first renames 
+            where 
+                fieldNames.bufferName = renames.bufferName 
+                and fieldNames.realName = renames.realName
+        ).
     end method.
     
     method public int numBuffers():
@@ -301,87 +376,14 @@ class classes.BufferUtil.Query:
     end method.
     
     method public Table toTable():
-        return toTable('join').
+        return toTable(true).
     end method.
     
-    method public Table toTable(pStrategy as char):
+    method public Table toTable(pUseOriginalName as log):
         prepare().
         def var queryClone as Query no-undo.
-        def var resultTable as Table no-undo.
-        
-        assign 
-            queryClone = cast(clone(), Query)
-            resultTable = new Table().
-        
-        case pStrategy:
-            when 'merge' then queryClone:calculateFieldNames(true).
-            when 'join' then queryClone:calculateFieldNames(false).
-        end.
-        
-        def var names as char no-undo.
-        def var fieldHandle as handle no-undo.
-        def var fieldName as char no-undo.
-        def var bufferName as char no-undo.
-        def var originalName as char no-undo.
-        def var nameRelations as char no-undo.
-        
-        assign names = queryClone:firstFieldName().
-        
-        repeat:
-            if names = '' then leave.
-            assign 
-                nameRelations = nameRelations + names + ';'
-                fieldName = entry(1, names)
-                bufferName = entry(2, names)
-                originalName = entry(3, names)
-                fieldHandle = queryClone:getField(originalName, bufferName).
-            
-            
-            if fieldHandle:extent > 0 then do:
-                resultTable:addField(fieldName, fieldHandle:data-type, fieldHandle:extent).
-            end.
-            else do:
-                resultTable:addField(fieldName, fieldHandle:data-type).
-            end.
-            names = queryClone:nextFieldName().
-        end.
-        
-        assign nameRelations = substring(nameRelations, 1, length(nameRelations) - 1).
-        
-        def var i as int no-undo.
-        def var j as int no-undo.
-        
-        createFormulaFields(resultTable).
-        resultTable:prepare().
-        queryClone:first().
-        
-        do while not queryClone:offEnd():
-            resultTable:createBuffer().
-            
-            do i = 1 to num-entries(nameRelations, ';'):
-                assign
-                    names = entry(i, nameRelations, ';')
-                    fieldName = entry(1, names)
-                    bufferName = entry(2, names)
-                    originalName = entry(3, names)
-                    fieldHandle = queryClone:getField(originalName, bufferName).
-                
-                if fieldHandle:extent > 0 then do:
-                    do j = 1 to fieldHandle:extent:
-                        resultTable:buffer:updateField(fieldName, fieldHandle:buffer-value(j), j).
-                    end.
-                end.
-                else do:
-                    resultTable:buffer:updateField(fieldName, fieldHandle:buffer-value).
-                end.
-            end.
-            
-            resultTable:calculateFormulas().
-            queryClone:next().
-        end.
-        
-        delete object queryClone no-error.
-        return resultTable.
+        assign queryClone = cast(clone(), Query).
+        return queryClone:currentQueryToTable(pUseOriginalName).
     end method.
     
     method protected void createFormulaFields(pTable as Table):
@@ -435,10 +437,12 @@ class classes.BufferUtil.Query:
     method public Query reset():
         empty temp-table buffers.
         empty temp-table fieldNames.
-        if valid-handle(handle) then do:
+        
+        if valid then do:
             handle:query-close.
             delete object handle no-error.
         end.
+        
         create query handle.
     end method.
     
@@ -456,9 +460,9 @@ class classes.BufferUtil.Query:
     end method.
     
     method public Table summarize(pKeys as char, pValues as char):
-        def var s as Summarizer no-undo.
-        assign s = new Summarizer(pKeys, pValues).
-        return s:summarize(this-object).
+        def var summarizerObject as Summarizer no-undo.
+        assign summarizerObject = new Summarizer(pKeys, pValues).
+        return summarizerObject:summarize(this-object).
     end method.
     
     method protected logical positionBuffer(pName as character):
