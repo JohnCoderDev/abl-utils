@@ -8,11 +8,16 @@ using classes.StringUtil.* from propath.
 class classes.BufferUtil.Query:
     def public property handle as handle no-undo get. protected set.
     def public property builder as QueryBuilder no-undo get. set.
+    def public property valid as log no-undo
+        get:
+            return valid-handle(handle).
+        end.    
+        
     def public property opened as log no-undo
         get:
-            if not valid-handle(handle) then return false.
+            if valid then return false.
             return handle:is-open.
-        end.    
+        end.
     
     define temp-table buffers   
         field name as character
@@ -21,13 +26,10 @@ class classes.BufferUtil.Query:
         field excludedFields as char.
         
     def temp-table fieldNames
-        field fieldName as char
         field bufferName as char
-        field originalName as char.
-        
-    def temp-table renames
-        field fieldName as char
-        field newName as char.
+        field realName as char
+        field newName as char
+        field autoCalculatedName as log.    
         
     def temp-table formulas
         field fieldName as char
@@ -71,6 +73,45 @@ class classes.BufferUtil.Query:
         return this-object.
     end method.
     
+    method public Query setFieldName(pBuffer as char, pField as char, pNewName as char):
+        find first fieldNames
+            where bufferName = pBuffer and realName = pField
+            no-error.
+        
+        if avail fieldNames then do:
+            assign 
+                fieldNames.newName = pNewName
+                fieldNames.autoCalculatedName = false.
+        end.
+        
+        return this-object.
+    end method.
+    
+    method public Query setFieldName(pField as char, pNewName as char):
+        find first fieldNames
+            where realName = pField
+            no-error.
+        
+        if avail fieldNames then do:
+            assign 
+                fieldNames.newName = pNewName
+                fieldNames.autoCalculatedName = false.
+        end.
+        
+        return this-object.
+    end method.
+    
+    method public Query calculateFieldNames():
+        for each fieldNames where newName = '':
+            assign 
+                fieldNames.newName = substitute("&1_&2", fieldNames.bufferName, fieldNames.realName)
+                fieldNames.newName = Sanitizer:kebabCase(fieldNames.newName)
+                fieldNames.newName = Splitter:crop(fieldNames.newName, 32)
+                fieldNames.autoCalculatedName = true.    
+        end.
+        return this-object.
+    end method.
+    
     method public Query setBuffer(pBuffer as handle):
         return setBuffer(new Buffer(pBuffer)).
     end method.
@@ -92,51 +133,73 @@ class classes.BufferUtil.Query:
     end method.
     
     method public Query setBuffer(pBuffer as Buffer):
-        if not findBuffer(pBuffer:name) then return this-object. 
-        assign buffers.buffer = pBuffer.
+        if positionBuffer(pBuffer:name) then do:
+            assign buffers.buffer = pBuffer.
+            addBufferFields(pBuffer).
+        end.    
         return this-object.
     end method.
     
+    method protected void addBufferFields(pBuffer as Buffer):
+        deleteBufferFields(pBuffer:name).
+        
+        def var i as int no-undo.
+        do i = 1 to pBuffer:numFields():
+            create fieldNames.
+            assign
+                fieldNames.bufferName = pBuffer:name
+                fieldNames.realName = pBuffer:fieldName(i).
+        end.
+    end method.
+    
+    method protected void deleteBufferFields(pBuffer as char):
+        for each fieldNames where bufferName = pBuffer:
+            delete fieldNames.
+        end.    
+    end method.
+    
     method public handle getField(pField as char):
-        def var b as Buffer no-undo.
-        assign b = getBufferOfField(pField).
-        if b = ? then
-            if b:has(pField) then
-                return b:field(pField).
+        def var bufferObject as Buffer no-undo.
+        assign bufferObject = getBufferOfField(pField).
+        if bufferObject = ? then
+            if bufferObject:has(pField) then
+                return bufferObject:field(pField).
     end method.
     
     method public handle getField(pField as char, pBuffer as char):
-        if findBuffer(pBuffer) then do:
-            def var b as Buffer no-undo.
-            assign b = cast(buffers.buffer, Buffer).
-            if b:has(pField) then return b:field(pField).
+        if positionBuffer(pBuffer) then do:
+            def var bufferObject as Buffer no-undo.
+            assign bufferObject = cast(buffers.buffer, Buffer).
+            if bufferObject:has(pField) then 
+                return bufferObject:field(pField).
         end.
     end method.
     
     method public Buffer getBufferOfField(pField as char):
-        def var b as Buffer no-undo.
+        def var bufferObject as Buffer no-undo.
         for each buffers where buffers.buffer <> ?:
-            assign b = cast(buffers.buffer, Buffer).
-            if b:has(pField) then return b.
+            assign bufferObject = cast(buffers.buffer, Buffer).
+            if bufferObject:has(pField) then 
+                return bufferObject.
         end.
     end method.
     
     method public char getValue(pField as char):
-        def var b as Buffer no-undo.
-        assign b = getBufferOfField(pField).
-        if b <> ? then return b:value(pField).
+        def var bufferObject as Buffer no-undo.
+        assign bufferObject = getBufferOfField(pField).
+        if bufferObject <> ? then 
+            return bufferObject:value(pField).
         return ''.
     end method.
     
     method public char getValue(pField as char, pBuffer as char):
-        def var b as Buffer no-undo.
-        assign b = getBuffer(pBuffer).
-        if b <> ? then
-            if b:has(pField) then
-                return b:value(pField).
+        def var bufferObject as Buffer no-undo.
+        assign bufferObject = getBuffer(pBuffer).
+        if bufferObject <> ? then
+            if bufferObject:has(pField) then
+                return bufferObject:value(pField).
         return ''.
     end method.
-    
     
     method public Buffer getBuffer():
         find first buffers no-error.
@@ -146,7 +209,7 @@ class classes.BufferUtil.Query:
     end method.
     
     method public Buffer getBuffer(pBuffer as char):
-        if findBuffer(pBuffer) then do:
+        if positionBuffer(pBuffer) then do:
             return cast(buffers.buffer, Buffer).
         end.
     end method.
@@ -154,76 +217,30 @@ class classes.BufferUtil.Query:
     method public Query prepare():
         if opened then return this-object.        
         
+        def var databaseBuffer as Buffer no-undo.
+        
         for each buffers:
-            if buffers.buffer = ? then buffers.buffer = new Buffer(buffers.name).
-            handle:add-buffer(cast(buffers.buffer, Buffer):handle).
+            if buffers.buffer = ? then do:
+                assign 
+                    databaseBuffer = new Buffer(buffers.name)
+                    buffers.buffer = databaseBuffer.
+            end.
         end.
         
-        handle:query-prepare(string(builder)).
+        handle:query-prepare(builder:toString()).
         handle:query-open.
         return this-object.
     end method.
     
     method public JsonObject toJson():
-        return toJson('separate').
+        return toJson(true).
     end method.
     
-    method public JsonObject toJson(pStrategy as char):
-        return toJson(pStrategy, false).
-    end method.
-    
-    method public JsonObject toJson(pStrategy as char, pPrefix as log):
-        if not opened then return new JsonObject().
-        def var json as JsonObject no-undo.
-        def var b as Buffer no-undo.
+    method public JsonObject toJson(pUseOriginalName as log):
+        def var resultJson as JsonObject no-undo.
+        assign resultJson = new JsonObject().
+        if not opened then return resultJson.
         
-        assign json = new JsonObject().
-        
-        case pStrategy:
-            when 'separate' then do:
-                for each buffers no-lock:
-                    assign b = cast(buffers.buffer, Buffer).
-                    if buffers.includedFields <> '' then do:
-                        json:add(b:name, b:toJson(buffers.includedFields, false)).
-                    end.
-                    else if buffers.excludedFields <> '' then do:
-                        json:add(b:name, b:toJson(buffers.excludedFields, true)).
-                    end.
-                    else do:
-                        json:add(b:name, b:toJson()).
-                    end.
-                end.
-            end.
-            when 'merge' then do:
-                calculateFieldNames(true, pPrefix).
-                for each fieldNames no-lock:
-                    json:add(
-                        fieldNames.fieldName, 
-                        getField(
-                            fieldNames.originalName,
-                            fieldNames.bufferName
-                        ):buffer-value
-                    ).
-                end.
-            end.
-            when 'join' then do:
-                calculateFieldNames(false, pPrefix).
-                for each fieldNames no-lock:
-                    json:add(
-                        fieldNames.fieldName, 
-                        getField(
-                            fieldNames.originalName,
-                            fieldNames.bufferName
-                        ):buffer-value
-                    ).
-                end.
-            end.
-            otherwise do:
-                return error new JsonStrategyNotFound(pStrategy).
-            end.
-        end.
-        
-        return json.
     end method.
     
     method public JsonArray toJsonArray():
@@ -255,23 +272,32 @@ class classes.BufferUtil.Query:
     end method.
     
     method public override object clone():
-        def var queryClone as Query no-undo.
-        assign queryClone = new Query(cast(builder:clone(), QueryBuilder)).
+        def var newQuery as Query no-undo.
+        def var bufferObject as Buffer no-undo.
+        def var builderClone as QueryBuilder no-undo.
+        
+        assign 
+            builderClone = cast(builder:clone(), QueryBuilder)
+            newQuery = new Query(builderClone).
         
         for each buffers no-lock:
-            queryClone:setBuffer(cast(buffers.buffer:clone(), Buffer)).
+            assign 
+                bufferObject = cast(buffers.buffer, Buffer)
+                bufferObject = cast(bufferObject:clone(), Buffer).
+            
+            newQuery:setBuffer(bufferObject).
         end.
         
-        return queryClone.
+        return newQuery.
     end method.
     
-    method public void showTable():
-        for each buffers:
-            disp
-                buffers.name
-                (buffers.buffer = ?) 
-            with scrollable.    
-        end.
+    method public Table currentQueryToTable(pUsePrefix as log):
+        
+    end method.
+    
+    method public int numBuffers():
+        if not valid then return 0.
+        return handle:num-buffers.
     end method.
     
     method public Table toTable():
@@ -365,91 +391,6 @@ class classes.BufferUtil.Query:
         end.
     end method.
     
-    method public char firstFieldName():
-        find first fieldNames no-error.
-        if not avail fieldNames then return ''.
-        return fieldNames.fieldName + "," + fieldNames.bufferName + "," + fieldNames.originalName.
-    end method.
-    
-    method public char nextFieldName():
-        if not avail fieldNames then return firstFieldName().
-        find next fieldNames no-error.
-        if not avail fieldNames then return ''.
-        return fieldNames.fieldName + "," + fieldNames.bufferName + "," + fieldNames.originalName.
-    end.
-    
-    method public Query calculateFieldNames():
-        return calculateFieldNames(false).
-    end method.
-    
-    method public Query calculateFieldNames(pMerge as log):
-        return calculateFieldNames(pMerge, false).
-    end method.
-    
-    method public Query calculateFieldNames(pMerge as log, pPrefix as log):
-        empty temp-table fieldNames.
-        def var i as int no-undo.
-        def var j as int no-undo.
-        def var b as Buffer no-undo.
-        def var availableName as char no-undo.
-        def var prefix as char no-undo.
-        def var currentFieldName as char no-undo.
-        
-        for each buffers no-lock where buffers.buffer <> ?:
-            assign 
-                b = cast(buffers.buffer, Buffer)
-                prefix = (if pPrefix then b:name + '-' else '').
-            
-            
-            do i = 1 to b:numFields():
-                if Matcher:contains(buffers.excludedFields, b:fieldName(i)) 
-                    or (not Matcher:contains(buffers.includedFields, b:fieldName(i)) and buffers.includedFields <> '')
-                    then next.
-                
-                assign currentFieldName = Splitter:crop(prefix + b:fieldName(i), 32).
-                
-                find first fieldNames 
-                    where fieldNames.fieldName = currentFieldName
-                    no-error.
-                
-                if not avail fieldNames then do:
-                    create fieldNames.
-                    assign
-                        fieldNames.fieldName = currentFieldName
-                        fieldNames.bufferName = b:name
-                        fieldNames.originalName = b:fieldName(i).
-                end.
-                else if avail fieldNames and not pMerge then do:
-                    assign
-                        availableName = ''
-                        j = 2.
-                    
-                    do while avail fieldNames:
-                        assign 
-                            availableName = currentFieldName + '-' + string(j)
-                            j = j + 1.
-                        
-                        find first fieldNames 
-                            where fieldNames.fieldName = availableName
-                            no-error.
-                    end.
-                    
-                    create fieldNames.
-                    assign
-                        fieldNames.fieldName = availableName
-                        fieldNames.bufferName = b:name
-                        fieldNames.originalName = b:fieldName(i).
-                end.
-                else do:
-                    assign
-                        fieldNames.bufferName = b:name.
-                end.
-            end.
-        end.
-        
-        return this-object.
-    end method.
-    
     method public log firstOf(pGroup as int):
         prepare().
         return handle:first-of(pGroup).
@@ -520,7 +461,7 @@ class classes.BufferUtil.Query:
         return s:summarize(this-object).
     end method.
     
-    method protected logical findBuffer(pName as character):
+    method protected logical positionBuffer(pName as character):
         find buffers where buffers.name = pName no-error.
         return available buffers.
     end method.

@@ -63,9 +63,9 @@ class classes.BufferUtil.Buffer:
     end method.
     
     method public override object clone():
-        def var b as handle no-undo.
-        create buffer b for table handle.
-        return new Buffer(b).
+        def var bufferCopy as handle no-undo.
+        create buffer bufferCopy for table handle.
+        return new Buffer(bufferCopy).
     end method.
     
     method public Buffer create():
