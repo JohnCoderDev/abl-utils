@@ -863,11 +863,13 @@ class classes.BufferUtil.Buffer:
             assign currentFieldName = fieldName(i).
             if this-object:extent(currentFieldName) > 0 then do:
                 do j = 1 to this-object:extent(currentFieldName):
-                    setInitial(currentFieldName, j).
+                    if fieldHasNull(currentFieldName, j) then
+                        setInitial(currentFieldName, j).
                 end.
             end.
             else do:
-                setInitial(currentFieldName).
+                if fieldHasNull(currentFieldName) then
+                    setInitial(currentFieldName).
             end.
         end.
         return this-object.
