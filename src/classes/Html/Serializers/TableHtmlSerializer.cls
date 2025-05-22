@@ -137,7 +137,12 @@ class classes.Html.Serializers.TableHtmlSerializer:
                 assign
                     bufferField = defaultBuffer:buffer-field(idx)
                     tableResult = tableResult + tdBodyTag:getOpenTag() 
-                        + string(bufferField:buffer-value) + tdBodyTag:getCloseTag().
+                        + (
+                            if bufferField:format = ? or bufferField:format = '' then 
+                                string(bufferField:buffer-value)
+                            else
+                                string(bufferField:buffer-value, bufferField:format)
+                        ) + tdBodyTag:getCloseTag().
             end.
             
             assign tableResult = tableResult + trBodyTag:getCloseTag().
@@ -162,7 +167,6 @@ class classes.Html.Serializers.TableHtmlSerializer:
     method public TagBuilder getThHeaderTag():
         return thHeaderTag.
     end method.
-
     
     method public TagBuilder getTrBodyTag():
         return trBodyTag.
