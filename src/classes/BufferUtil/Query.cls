@@ -306,7 +306,7 @@ class classes.BufferUtil.Query:
         return currentQueryToTable(pUseOriginalName, true).
     end method.
     
-    method public Table currentQueryToTable(pUseOriginalName as log, setNullsAsInitial as log):
+    method public Table currentQueryToTable(pUseOriginalName as log, pSetNullAsInitial as log):
         prepare().
         def var resultTable as Table no-undo.
         assign resultTable = new Table().
@@ -366,13 +366,13 @@ class classes.BufferUtil.Query:
                     bufferObject:field(fieldName):buffer-value
                 ).
                 
-                if setNullsAsInitial then do:
+                if pSetNullAsInitial then do:
                     resultTable:buffer:replaceNullsWithInitial().
                 end.
                 
                 resultTable:calculateFormulas().
                 
-                if setNullsAsInitial then do:
+                if pSetNullAsInitial then do:
                     resultTable:buffer:replaceNullsWithInitial().
                 end.
             end.
@@ -403,7 +403,7 @@ class classes.BufferUtil.Query:
         return toTable(pUseOriginalName, true).
     end method.
     
-    method public Table toTable(pUseOriginalName as log, pSetNullsAsInitial as log):
+    method public Table toTable(pUseOriginalName as log, ppSetNullAsInitial as log):
         prepare().
         def var queryClone as Query no-undo.
         assign queryClone = cast(clone(), Query).
