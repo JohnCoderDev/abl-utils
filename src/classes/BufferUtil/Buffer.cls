@@ -63,6 +63,26 @@ class classes.BufferUtil.Buffer:
         return this-object.
     end method.
     
+    method public char fieldFormat(pField as int):
+        def var stringFormat as char no-undo.
+        if has(pField) then do:
+            assign 
+                stringFormat = this-object:field(pField):format
+                stringFormat = if stringFormat = ? then '' else stringFormat.
+        end.
+        return stringFormat.
+    end method.
+    
+    method public char fieldFormat(pField as char):
+        def var stringFormat as char no-undo.
+        if has(pField) then do:
+            assign 
+                stringFormat = this-object:field(pField):format
+                stringFormat = if stringFormat = ? then '' else stringFormat.
+        end.
+        return stringFormat.
+    end method.
+    
     method public override object clone():
         def var bufferCopy as handle no-undo.
         create buffer bufferCopy for table handle.
@@ -947,7 +967,8 @@ class classes.BufferUtil.Buffer:
     end method.
     
     method public char value(pIndex as int, pExtent as int):
-        if has(pIndex) then return this-object:field(pIndex):string-value(pExtent).
+        if has(pIndex) then 
+            return this-object:field(pIndex):string-value(pExtent).
     end method.
     
     method public char value(pField as char):

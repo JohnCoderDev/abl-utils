@@ -439,6 +439,25 @@ class classes.BufferUtil.Table:
         return this-object.
     end method.
     
+    
+    method public Table setFormat(pField as char, pFormat as char):
+        if prepared then do:
+            if this-object:buffer:has(pField) then do:
+                assign this-object:buffer:field(pField):format = pFormat.
+            end.
+        end.
+        return this-object.
+    end method.
+    
+    method public Table setFormat(pField as int, pFormat as char):
+        if prepared then do:
+            if this-object:buffer:has(pField) then do:
+                assign this-object:buffer:field(pField):format = pFormat.
+            end.
+        end.
+        return this-object.
+    end method.
+    
     method public JsonArray toJson():
         def var array as JsonArray no-undo.
         assign array = new JsonArray().
