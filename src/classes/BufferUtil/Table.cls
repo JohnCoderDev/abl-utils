@@ -9,16 +9,22 @@ class classes.BufferUtil.Table:
     def public property handle as handle no-undo get. protected set.
     def public property buffer as Buffer no-undo get. protected set. 
         
+    def public property valid as log no-undo
+        get:
+            return valid-handle(handle).
+        end.
+        
     def public property prepared as log no-undo
         get:
-            if not valid-handle(handle) then return false.
+            if not valid then return false.
             return handle:prepared.
         end.
         
     def public property name as char no-undo init 'result' get.
         set(pName as char):
-            if not prepared then return.
-            assign name = Sanitizer:kebabCase(pName).
+            if not prepared then do:
+                assign name = Sanitizer:kebabCase(pName).
+            end.
         end.
         
     def temp-table formulas
@@ -201,23 +207,37 @@ class classes.BufferUtil.Table:
         assign name = pName.
     end method.
     
-    method public Table copyData(pSource as Table):
-        def var queryObject as Query no-undo.
-        def var queryBuffer as Buffer no-undo.
-        
-        assign 
-            queryObject = new Query(pSource)
-            queryBuffer = queryObject:getBuffer().
+    method public Table copyData(pBuffer as char):
+        return copyData(new Buffer(pBuffer)).
+    end method.
+    
+    method public Table copyData(pTable as Table):
+        return copyData(pTable:buffer).
+    end method.
+    
+    method public Table copyData(pBuffer as Buffer):
+        prepare().
+        def var queryObject as Query no-undo.    
+        assign queryObject = new Query(pBuffer).
+        queryObject:setBuffer(pBuffer).
         
         queryObject:first().
         do while not queryObject:offEnd():
             this-object:createBuffer().
-            bufferCopy(queryBuffer).
+            this-object:buffer:handle:buffer-copy(pBuffer:handle).
             queryObject:next().
         end.
         
         delete object queryObject no-error.
         return this-object.
+    end method.
+    
+    method public Table reduceTable(pFields as char):
+        def var newTable as Table no-undo.
+        assign newTable = new Table().
+        newTable:addLike(this-object, pFields).
+        newTable:copyData(this-object).
+        return newTable.
     end method.
     
     method public Table copy(pTable as handle):
@@ -271,7 +291,9 @@ class classes.BufferUtil.Table:
     end method.
     
     method public Table setName(pName as char):
-        assign name = pName.
+        if not prepared then do:
+            assign name = pName.
+        end.
         return this-object.
     end method.
     
@@ -368,7 +390,7 @@ class classes.BufferUtil.Table:
     
     method public Table calculateFormulas():
         def var formula as FormulaInterpreter no-undo.
-        for each formulas:
+        for each formulas no-lock:
             if not this-object:buffer:has(formulas.fieldTarget) then next.
             assign formula = cast(formulas.formula, FormulaInterpreter).
             formula:applyFormula(this-object:buffer, formulas.fieldTarget).
@@ -380,7 +402,8 @@ class classes.BufferUtil.Table:
         if valid-handle(handle) then do:
             delete object buffer no-error.
             delete object handle no-error.
-            assign name = ''.
+            assign name = 'result'.
+            create temp-table handle.
         end.
     end method.
     
@@ -389,16 +412,38 @@ class classes.BufferUtil.Table:
     end method.
     
     method public Table summarize(pKeys as char, pValues as char):
-        def var s as Summarizer no-undo.
-        assign s = new Summarizer(pKeys, pValues).
-        return s:summarize(this-object).
+        def var summarizerObject as Summarizer no-undo.
+        assign summarizerObject = new Summarizer(pKeys, pValues).
+        return summarizerObject:summarize(this-object).
     end method.
     
     method public JsonArray toJson():
-        def var arr as JsonArray no-undo.
-        assign arr = new JsonArray().
-        handle:write-json('JsonArray', arr, false, ?, false, true).
-        return arr.
+        def var array as JsonArray no-undo.
+        assign array = new JsonArray().
+        handle:write-json('JsonArray', array, false, ?, false, true).
+        return array.
+    end method.
+    
+    method public override object clone():
+        return clone('').
+    end method.
+    
+    method public object clone(pExcept as char):
+        def var newTable as Table no-undo.
+        def var formulaObject as FormulaInterpreter no-undo.
+        def var formulaExpression as char no-undo.
+        
+        assign newTable = new Table().
+        newTable:addFrom(this-object, pExcept).
+        
+        for each formulas no-lock:
+            assign
+                formulaObject = cast(formulas.formula, FormulaInterpreter)
+                formulaExpression = formulaObject:formula.            
+            newTable:addFormula(formulas.fieldTarget, formulaExpression).
+        end.
+        
+        return newTable.
     end method.
     
     destructor Table():
