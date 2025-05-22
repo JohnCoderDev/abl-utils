@@ -496,6 +496,72 @@ class classes.BufferUtil.Table:
             :currentQueryToTable().
     end method.
     
+    method public log canFind(pWhere as char):
+        def var bufferCopy as Buffer no-undo.
+        assign bufferCopy = cast(buffer:clone(), Buffer).
+        bufferCopy:first(substitute('where &1', pWhere)).
+        return bufferCopy:available.
+    end method.
+    
+    method public Table unique(pFields as char):
+        def var resultTable as Table no-undo.
+        def var queryObject as Query no-undo.
+        def var queryBuffer as Buffer no-undo.
+        def var wherePhrase as char no-undo.
+        def var replacedWherePhrase as char no-undo.
+        def var fieldName as char no-undo.
+        def var fieldNames as char no-undo.
+        def var quote as log no-undo.
+        def var i as int no-undo.
+        
+        assign 
+            resultTable = new Table()
+            queryObject = new Query(this-object).
+        
+        do i = 1 to num-entries(pFields, ' '):
+            assign
+                fieldName = entry(i, pFields, ' ')
+                quote = logical(entry(2, fieldName, ':'))
+                fieldName = entry(1, fieldName, ':')
+                fieldNames = substitute('&1&2 ', fieldNames, fieldName)
+                wherePhrase = wherePhrase + substitute(
+                    '&1 = &2 and ',
+                    fieldName,
+                    substitute(if quote then quoter("~&&1") else "~&&1", i)
+                ).
+        end.
+        
+        assign
+            wherePhrase = substring(wherePhrase, 1, length(wherePhrase) - 5)
+            fieldNames = substring(fieldNames, 1, length(fieldNames) - 1).
+        
+        resultTable
+            :addLike(this-object, fieldNames)
+            :addIndex('idx-primary', true, true, false)
+            :addIndexField('idx-primary', fieldNames)
+            :prepare().
+        
+        queryObject:first().
+        assign queryBuffer = queryObject:getBuffer().
+        
+        do while not queryObject:offEnd() on error undo, next:
+            assign replacedWherePhrase = wherePhrase.
+            do i = 1 to num-entries(fieldNames, ' '):
+                assign 
+                    fieldName = entry(i, fieldNames, ' ')
+                    replacedWherePhrase = replace(replacedWherePhrase, substitute('~&&1', i), queryBuffer:value(fieldName)).    
+            end.
+            
+            if not resultTable:canFind(replacedWherePhrase) then do:
+                resultTable:createBuffer().
+                resultTable:buffer:handle:buffer-copy(queryBuffer:handle).
+            end.
+            
+            queryObject:next().
+        end.
+        return resultTable.
+    end method.
+    
     destructor Table():
         reset().
     end destructor.
