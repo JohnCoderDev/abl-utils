@@ -487,6 +487,15 @@ class classes.BufferUtil.Table:
         return newTable.
     end method.
     
+    method public Table filter(pWhere as char):
+        return new QueryBuilder()
+            :table(name)
+            :where(pWhere)
+            :buildQuery()
+            :setBuffer(this-object:buffer)
+            :currentQueryToTable().
+    end method.
+    
     destructor Table():
         reset().
     end destructor.
