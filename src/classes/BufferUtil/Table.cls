@@ -417,6 +417,28 @@ class classes.BufferUtil.Table:
         return summarizerObject:summarize(this-object).
     end method.
     
+    method public Table setLabel(pField as char, pNewLabel as char):
+        if prepared then do:
+            if this-object:buffer:has(pField) then do:
+                assign
+                    this-object:buffer:field(pField):label = pNewLabel
+                    this-object:buffer:field(pField):column-label = pNewLabel.
+            end.
+        end.
+        return this-object.
+    end method.
+    
+    method public Table setLabel(pField as int, pNewLabel as char):
+        if prepared then do:
+            if this-object:buffer:has(pField) then do:
+                assign
+                    this-object:buffer:field(pField):label = pNewLabel
+                    this-object:buffer:field(pField):column-label = pNewLabel.
+            end.
+        end.
+        return this-object.
+    end method.
+    
     method public JsonArray toJson():
         def var array as JsonArray no-undo.
         assign array = new JsonArray().

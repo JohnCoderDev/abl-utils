@@ -30,15 +30,15 @@ class classes.Excel.ExcelReportGenerator:
     end method.
     
     method public Excel parseQuery(pQuery as Query, pPath as char, pUseLabel as log):
-        return parseQuery(pQuery, pPath, pUseLabel, 'merge').
+        return parseQuery(pQuery, pPath, pUseLabel, true).
     end method.
     
-    method public Excel parseQuery(pQuery as Query, pPath as char, pUseLabel as log, pMode as char):
-        return parseQuery(pQuery, pPath, pUseLabel, pMode, ?).
+    method public Excel parseQuery(pQuery as Query, pPath as char, pUseLabel as log, pUseOriginalName as log):
+        return parseQuery(pQuery, pPath, pUseLabel, pUseOriginalName, ?).
     end method.
     
-    method public Excel parseQuery(pQuery as Query, pPath as char, pUseLabel as log, pMode as char, pFields as char):
-        return parseTable(pQuery:toTable(pMode), pPath, pUseLabel, pFields).
+    method public Excel parseQuery(pQuery as Query, pPath as char, pUseLabel as log, pUseOriginalName as log, pFields as char):
+        return parseTable(pQuery:toTable(pUseOriginalName), pPath, pUseLabel, pFields).
     end method.
     
     method public Excel parseTable(pTable as Table, pPath as char):

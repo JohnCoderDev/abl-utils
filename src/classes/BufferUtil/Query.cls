@@ -403,11 +403,11 @@ class classes.BufferUtil.Query:
         return toTable(pUseOriginalName, true).
     end method.
     
-    method public Table toTable(pUseOriginalName as log, ppSetNullAsInitial as log):
+    method public Table toTable(pUseOriginalName as log, pSetNullAsInitial as log):
         prepare().
         def var queryClone as Query no-undo.
         assign queryClone = cast(clone(), Query).
-        return queryClone:currentQueryToTable(pUseOriginalName).
+        return queryClone:currentQueryToTable(pUseOriginalName, pSetNullAsInitial).
     end method.
     
     method protected void createFormulaFields(pTable as Table):
