@@ -988,6 +988,36 @@ class classes.BufferUtil.Buffer:
         end.    
     end method.
     
+    method public char value(pField as char, pUseFormat as log):
+        return this-object:value(pField, if pUseFormat then fieldFormat(pField) else ?).
+    end method.
+    
+    method public char value(pField as char, pFormat as char):
+        if has(pField) then do:
+            if this-object:field(pField):buffer-value = ? 
+                then return ''.
+            if pFormat = '' or pFormat = ? then 
+                return string(this-object:field(pField):buffer-value).
+                
+            return string(this-object:field(pField):buffer-value, pFormat).
+        end.
+    end method.
+    
+    method public char value(pField as char, pExtent as int, pUseFormat as log):
+        return this-object:value(pField, pExtent, if pUseFormat then fieldFormat(pField) else ?).
+    end method.
+    
+    method public char value(pField as char, pExtent as int, pFormat as char):
+        if has(pField) then do:
+            if this-object:field(pField):buffer-value(pExtent) = ? 
+                then return ''.
+            if pFormat = '' or pFormat = ? then 
+                return string(this-object:field(pField):buffer-value(pExtent)).
+                
+            return string(this-object:field(pField):buffer-value(pExtent), pFormat).
+        end.
+    end method.
+    
     method public Buffer fieldCopy(pBuffer as Buffer, pFields as char):
         return fieldCopy(pBuffer, pFields, FieldCopyStrategy:DEFAULT). 
     end method.
