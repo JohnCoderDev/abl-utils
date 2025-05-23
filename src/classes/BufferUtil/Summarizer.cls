@@ -50,6 +50,8 @@ class classes.BufferUtil.Summarizer:
         addAggregator('average', 'classes.BufferUtil.Aggregators.AverageAggregator').
         addAggregator('variance', 'classes.BufferUtil.Aggregators.VarianceAggregator').
         addAggregator('std-deviation', 'classes.BufferUtil.Aggregators.StandardDeviationAggregator').
+        addAggregator('first', 'classes.BufferUtil.Aggregators.FirstAggregator').
+        addAggregator('last', 'classes.BufferUtil.Aggregators.LastAggregator').
     end method.
     
     method public Summarizer addAggregator(pName as char, pClass as char):
