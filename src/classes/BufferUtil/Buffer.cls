@@ -91,13 +91,17 @@ class classes.BufferUtil.Buffer:
     
     method public Buffer create():
         if not valid-handle(handle) then return this-object.
-        handle:buffer-create.
+        do transaction:
+            handle:buffer-create.
+        end.
         return this-object.
     end method.
     
     method public Buffer delete():
         if not valid-handle(handle) then return this-object.
-        handle:buffer-delete.
+        do transaction:
+            handle:buffer-delete.
+        end.
         return this-object.
     end method.
     
