@@ -57,6 +57,18 @@ class classes.Excel.ExcelReportGenerator:
         return parseBuffer(pTable:buffer, pPath, pUseLabel, pFields).
     end method.
     
+    method public Excel parseBuffer(pBuffer as handle, pPath as char):
+        return parseBuffer(pBuffer, pPath, true).
+    end method.
+    
+    method public Excel parseBuffer(pBuffer as handle, pPath as char, pUseLabel as log):
+        return parseBuffer(pBuffer, pPath, pUseLabel, ?).
+    end method.
+    
+    method public Excel parseBuffer(pBuffer as handle, pPath as char, pUseLabel as log, pFields as char):
+        return parseBuffer(new Buffer(pBuffer), pPath, pUseLabel, pFields).
+    end method.
+    
     method public Excel parseBuffer(pBuffer as char, pPath as char):
         return parseBuffer(pBuffer, pPath, true).
     end method.
