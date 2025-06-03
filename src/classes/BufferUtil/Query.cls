@@ -140,6 +140,24 @@ class classes.BufferUtil.Query:
         end.
     end method.
     
+    method public static void copyDataToTarget(pSource as handle, pTarget as handle):
+        copyDataToTarget(new Buffer(pSource), new Buffer(pTarget)).
+    end method.
+    
+    method public static void copyDataToTarget(pSource as Buffer, pTarget as Buffer):
+        def var queryObject as Query no-undo.
+        assign queryObject = new QueryBuilder():table(pSource:name):buildQuery().
+        
+        queryObject:setBuffer(pSource).
+        
+        queryObject:first().
+        do while not queryObject:offEnd():
+            pTarget:create().
+            pTarget:handle:buffer-copy(pSource:handle).
+            queryObject:next().
+        end.
+    end method.
+    
     method protected void deleteBufferFields(pBuffer as char):
         for each fieldNames where bufferName = pBuffer:
             delete fieldNames.
