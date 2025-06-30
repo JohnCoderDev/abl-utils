@@ -1,6 +1,5 @@
 block-level on error undo, throw.
 using classes.StringUtil.* from propath.
-block-level on error undo, throw.
 class classes.StringUtil.Masker:
     def public static property defaultIndicator as char init '#' get.
     
