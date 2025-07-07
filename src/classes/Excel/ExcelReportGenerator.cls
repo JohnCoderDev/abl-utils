@@ -133,6 +133,20 @@ class classes.Excel.ExcelReportGenerator:
         tableCopy:createBuffer().
         return parseTable(tableCopy, pPath, false).
     end method.
+
+    method public Excel generateTableExample(pBuffer as handle, pPath as char):
+        def var tableCopy as Table no-undo.
+        assign tableCopy = new Table(pBuffer).
+        tableCopy:createBuffer().
+        return parseTable(tableCopy, pPath, false).
+    end method.
+
+    method public Excel generateTableExample(pBuffer as handle, pPath as char, pFields as char):
+        def var tableCopy as Table no-undo.
+        assign tableCopy = new Table().
+        tableCopy:addLike(pBuffer, pFields):createBuffer().
+        return parseTable(tableCopy, pPath, false).
+    end method.
     
     method protected void applyFormats(pExcel as Excel, pBuffer as Buffer):
         if boldHeader then do:

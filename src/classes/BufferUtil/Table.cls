@@ -41,9 +41,7 @@ class classes.BufferUtil.Table:
     end constructor.
     
     constructor Table(pTable as handle):
-        assign 
-            handle = pTable
-            name = handle:name.
+        createLike(pTable).
     end constructor.
     
     constructor Table(pLike as char):
